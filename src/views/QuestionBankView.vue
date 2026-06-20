@@ -19,6 +19,7 @@ const detail = ref<Question | null>(null)
 const loading = ref(false)
 const detailLoading = ref(false)
 const importing = ref(false)
+const zipInput = ref<HTMLInputElement | null>(null)
 const questionTypes = ref<string[]>([])
 const error = ref('')
 const importMessage = ref('')
@@ -51,13 +52,33 @@ async function openDetail(questionId: string) {
   }
 }
 
-async function importZip() {
+function openZipPicker() {
+  if (importing.value) return
+  zipInput.value?.click()
+}
+
+async function handleZipSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+
+  if (!file) return
+  if (!file.name.toLowerCase().endsWith('.zip')) {
+    importMessage.value = ''
+    error.value = '请选择 zip 文件'
+    return
+  }
+
+  await importZip(file)
+}
+
+async function importZip(file: File) {
   if (importing.value) return
   importMessage.value = ''
   error.value = ''
   importing.value = true
   try {
-    const result = await api.importFromDocsZip()
+    const result = await api.importFromDocsZip(file)
     importMessage.value = `导入完成：${result.successQuestionCount ?? 0}/${result.totalQuestionCount ?? 0} 道题成功，失败 ${result.failedQuestionCount ?? 0} 道`
     await loadQuestionTypes()
     await load()
@@ -88,10 +109,17 @@ onMounted(async () => {
         <p>题库</p>
         <h1>搜索、查看答案和导入题目</h1>
       </div>
-      <button class="ghost-button" type="button" :disabled="importing" @click="importZip">
+      <button class="ghost-button" type="button" :disabled="importing" @click="openZipPicker">
         <DownloadCloud :size="17" />
-        {{ importing ? '导入中...' : '从 docs zip 导入' }}
+        {{ importing ? '导入中...' : '上传 zip 导入' }}
       </button>
+      <input
+        ref="zipInput"
+        class="file-input"
+        type="file"
+        accept=".zip,application/zip,application/x-zip-compressed"
+        @change="handleZipSelected"
+      />
     </div>
 
     <form class="filter-bar glass-card" @submit.prevent="search">

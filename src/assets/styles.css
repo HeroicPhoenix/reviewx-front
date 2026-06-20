@@ -138,6 +138,10 @@ select:focus {
   width: 100%;
 }
 
+.file-input {
+  display: none;
+}
+
 .icon-button {
   width: 42px;
   padding: 0;

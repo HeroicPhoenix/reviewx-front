@@ -41,8 +41,13 @@ export const api = {
   questionTypes: () => request<string[]>(http.get('/api/question/typeList')),
   questionDetail: (questionId: string) =>
     request<Question>(http.get('/api/question/detail', { params: { questionId } })),
-  importFromDocsZip: () =>
-    request<QuestionImportResult>(http.post('/api/question/importFromDocsZip', null, { timeout: 120000 })),
+  importFromDocsZip: (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    return request<QuestionImportResult>(
+      http.post('/api/question/importFromDocsZip', formData, { timeout: 120000 }),
+    )
+  },
   randomList: (params: QuestionFilters) =>
     request<Question[]>(http.get('/api/practice/randomList', { params })),
   orderList: (params: QuestionFilters) =>
