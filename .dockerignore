@@ -1,0 +1,34 @@
+# Dependencies
+node_modules/
+
+# Build outputs and caches
+.vite/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Local env files
+.env
+.env.*
+
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.swp
+*.tmp
+
+# VCS / OS
+.git/
+.gitignore
+.DS_Store
+
+# Docker metadata not needed inside the build context
+Dockerfile
+.dockerignore
