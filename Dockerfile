@@ -25,6 +25,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 ENV API_BASE_URL=/api
 ENV USE_MOCK=false
 ENV GATEWAY_UPSTREAM=http://host.docker.internal:58080
+ENV ICP_FOOTER_VISIBLE=true
+ENV ICP_TEXT=
+ENV ICP_URL=https://beian.miit.gov.cn/
 
 # ================================
 # 生成 Nginx 配置脚本
@@ -98,11 +101,17 @@ RUN printf '%s\n' \
 'API_BASE_URL_JS=$(escape_js "${API_BASE_URL}")' \
 'USE_MOCK_JS=$(escape_js "${USE_MOCK}")' \
 'GATEWAY_UPSTREAM_JS=$(escape_js "${GATEWAY_UPSTREAM}")' \
+'ICP_FOOTER_VISIBLE_JS=$(escape_js "${ICP_FOOTER_VISIBLE}")' \
+'ICP_TEXT_JS=$(escape_js "${ICP_TEXT}")' \
+'ICP_URL_JS=$(escape_js "${ICP_URL}")' \
 '' \
 'printf "window.__APP_CONFIG__ = {\n" > /usr/share/nginx/html/config.js' \
 'printf "  API_BASE_URL: \"${API_BASE_URL_JS}\",\n" >> /usr/share/nginx/html/config.js' \
 'printf "  USE_MOCK: \"${USE_MOCK_JS}\",\n" >> /usr/share/nginx/html/config.js' \
-'printf "  GATEWAY_UPSTREAM: \"${GATEWAY_UPSTREAM_JS}\"\n" >> /usr/share/nginx/html/config.js' \
+'printf "  GATEWAY_UPSTREAM: \"${GATEWAY_UPSTREAM_JS}\",\n" >> /usr/share/nginx/html/config.js' \
+'printf "  ICP_FOOTER_VISIBLE: \"${ICP_FOOTER_VISIBLE_JS}\",\n" >> /usr/share/nginx/html/config.js' \
+'printf "  ICP_TEXT: \"${ICP_TEXT_JS}\",\n" >> /usr/share/nginx/html/config.js' \
+'printf "  ICP_URL: \"${ICP_URL_JS}\"\n" >> /usr/share/nginx/html/config.js' \
 'printf "};\n" >> /usr/share/nginx/html/config.js' \
 > /docker-entrypoint.d/40-generate-config.sh
 
