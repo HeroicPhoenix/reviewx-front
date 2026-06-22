@@ -25,7 +25,7 @@ http.interceptors.response.use(
   (error: AxiosError<ApiResponse<unknown>>) => {
     const status = error.response?.status
     const message = error.response?.data?.message || error.message || '网络异常'
-    if (status === 401 || status === 403) {
+    if (status === 401) {
       const auth = useAuthStore()
       auth.clearSession()
       router.replace({ name: 'login', query: { redirect: router.currentRoute.value.fullPath } })

@@ -8,6 +8,7 @@ import type {
   Question,
   QuestionImportResult,
   SubmitAnswerResult,
+  UserAccount,
 } from '@/types/api'
 
 export interface QuestionFilters {
@@ -36,6 +37,9 @@ export const api = {
   logout: () => request<void>(http.post('/api/auth/logout')),
   changePassword: (oldPassword: string, newPassword: string) =>
     request<void>(http.post('/api/auth/changePassword', { oldPassword, newPassword })),
+  users: () => request<UserAccount[]>(http.get('/api/user/list')),
+  createUser: (payload: { username: string; password: string; nickName?: string }) =>
+    request<UserAccount>(http.post('/api/user/create', payload)),
   searchQuestions: (params: QuestionFilters) =>
     request<PageResult<Question>>(http.get('/api/question/search', { params })),
   questionTypes: () => request<string[]>(http.get('/api/question/typeList')),

@@ -1,20 +1,21 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { RouterLink, useRouter } from 'vue-router'
-import { BookOpenCheck, ChartNoAxesColumn, Dumbbell, LibraryBig, LogOut, Menu, UserRound, X } from 'lucide-vue-next'
+import { BookOpenCheck, ChartNoAxesColumn, Dumbbell, LibraryBig, LogOut, Menu, UserCog, UserRound, X } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 
 const router = useRouter()
 const auth = useAuthStore()
 const menuOpen = ref(false)
 
-const navItems = [
+const navItems = computed(() => [
   { to: '/dashboard', label: '概览', icon: ChartNoAxesColumn },
   { to: '/questions', label: '题库', icon: LibraryBig },
   { to: '/practice', label: '刷题', icon: Dumbbell },
   { to: '/records', label: '记录', icon: BookOpenCheck },
+  ...(auth.user?.permissions?.includes('user:manage') ? [{ to: '/users', label: '用户', icon: UserCog }] : []),
   { to: '/profile', label: '我的', icon: UserRound },
-]
+])
 
 const initials = computed(() => auth.displayName.slice(0, 1).toUpperCase())
 

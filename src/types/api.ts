@@ -76,6 +76,14 @@ export interface AnswerRecordStat {
   averageDurationMs: number
 }
 
+export interface UserAccount {
+  userId: number
+  username: string
+  nickName?: string
+  userStatus: number
+  createTime?: string
+}
+
 export interface QuestionImportResult {
   totalFileCount?: number
   totalQuestionCount?: number

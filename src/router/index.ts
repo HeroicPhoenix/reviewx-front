@@ -16,6 +16,7 @@ const router = createRouter({
         { path: 'questions', name: 'questions', component: () => import('@/views/QuestionBankView.vue') },
         { path: 'practice', name: 'practice', component: () => import('@/views/PracticeView.vue') },
         { path: 'records', name: 'records', component: () => import('@/views/RecordsView.vue') },
+        { path: 'users', name: 'users', component: () => import('@/views/UserManageView.vue'), meta: { permission: 'user:manage' } },
         { path: 'profile', name: 'profile', component: () => import('@/views/ProfileView.vue') },
       ],
     },
@@ -33,6 +34,9 @@ router.beforeEach(async (to) => {
       auth.clearSession()
       return { name: 'login', query: { redirect: to.fullPath } }
     }
+  }
+  if (to.meta.permission && !auth.user?.permissions?.includes(String(to.meta.permission))) {
+    return { name: 'dashboard' }
   }
   return true
 })
