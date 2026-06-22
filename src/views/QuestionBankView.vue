@@ -124,8 +124,8 @@ onMounted(async () => {
 
     <form class="filter-bar glass-card" @submit.prevent="search">
       <input v-model.trim="filters.keyword" placeholder="关键词" />
-      <select v-model="filters.questionType" aria-label="题型">
-        <option value="">全部题型</option>
+      <select v-model="filters.questionType" aria-label="科目分类">
+        <option value="">全部分类</option>
         <option v-for="type in questionTypes" :key="type" :value="type">{{ type }}</option>
       </select>
       <input v-model.trim="filters.questionYear" placeholder="年份" />
@@ -142,7 +142,8 @@ onMounted(async () => {
         <article v-for="item in page?.list" :key="item.questionId" class="question-row glass-card">
           <div>
             <div class="question-meta">
-              <span>{{ item.questionType || '题目' }}</span>
+              <span>{{ item.questionCategory || '题目' }}</span>
+              <span>{{ item.questionType === 2 ? '多选' : '单选' }}</span>
               <span>{{ item.questionYear || '未知年份' }}</span>
               <span>{{ item.questionSource || '未知来源' }}</span>
             </div>

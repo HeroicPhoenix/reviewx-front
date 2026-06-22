@@ -58,6 +58,10 @@ async function loadQuestions() {
 
 function toggleOption(option: string) {
   if (result.value) return
+  if (current.value?.questionType === 1) {
+    selected.value = selected.value.includes(option) ? [] : [option]
+    return
+  }
   if (selected.value.includes(option)) {
     selected.value = selected.value.filter((item) => item !== option)
   } else {
@@ -120,8 +124,8 @@ onMounted(loadQuestionTypes)
         <button type="button" :class="{ active: mode === 'order' }" @click="mode = 'order'">顺序</button>
         <button type="button" :class="{ active: mode === 'wrong' }" @click="mode = 'wrong'">错题</button>
       </div>
-      <select v-model="filters.questionType" aria-label="题型">
-        <option value="">全部题型</option>
+      <select v-model="filters.questionType" aria-label="科目分类">
+        <option value="">全部分类</option>
         <option v-for="type in questionTypes" :key="type" :value="type">{{ type }}</option>
       </select>
       <input v-model.trim="filters.questionYear" placeholder="年份" />

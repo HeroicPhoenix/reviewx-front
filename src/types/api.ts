@@ -29,7 +29,8 @@ export interface Me {
 
 export interface Question {
   questionId: string
-  questionType?: string
+  questionType?: number
+  questionCategory?: string
   questionContent?: string
   questionImageBase64?: string
   option1?: string
