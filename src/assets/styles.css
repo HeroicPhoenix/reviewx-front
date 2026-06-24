@@ -418,7 +418,8 @@ select:focus {
 
 .split-grid,
 .practice-layout,
-.profile-grid {
+.profile-grid,
+.api-key-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 0.85fr);
   gap: 18px;
@@ -431,6 +432,10 @@ select:focus {
 
 .profile-grid {
   grid-template-columns: minmax(0, 0.8fr) minmax(320px, 1fr);
+}
+
+.api-key-layout {
+  grid-template-columns: minmax(300px, 0.62fr) minmax(0, 1fr);
 }
 
 .list-stack,
@@ -647,6 +652,49 @@ select:focus {
   overflow: hidden;
 }
 
+.table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.table-head h2 {
+  margin: 0;
+}
+
+.api-key-secret {
+  display: grid;
+  gap: 10px;
+  border-radius: 16px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.66);
+}
+
+.api-key-secret span {
+  color: #b2354a;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.api-key-secret code {
+  overflow-wrap: anywhere;
+  color: #20354a;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.action-cell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.danger-button {
+  color: #b2354a;
+}
+
 .responsive-table {
   overflow-x: auto;
 }
@@ -703,7 +751,8 @@ th {
 
   .split-grid,
   .practice-layout,
-  .profile-grid {
+  .profile-grid,
+  .api-key-layout {
     grid-template-columns: 1fr;
   }
 

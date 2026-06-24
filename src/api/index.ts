@@ -2,6 +2,8 @@ import { http, request } from './http'
 import type {
   AnswerRecord,
   AnswerRecordStat,
+  ApiKeyCreateResult,
+  ApiKeyItem,
   LoginResult,
   Me,
   PageResult,
@@ -37,6 +39,13 @@ export const api = {
   logout: () => request<void>(http.post('/api/auth/logout')),
   changePassword: (oldPassword: string, newPassword: string) =>
     request<void>(http.post('/api/auth/changePassword', { oldPassword, newPassword })),
+  apiKeys: () => request<ApiKeyItem[]>(http.get('/api/apiKey/list')),
+  createApiKey: (payload: { apiKeyName: string; expireTime?: string }) =>
+    request<ApiKeyCreateResult>(http.post('/api/apiKey/create', payload)),
+  disableApiKey: (apiKeyId: number) =>
+    request<void>(http.post('/api/apiKey/disable', { apiKeyId })),
+  deleteApiKey: (apiKeyId: number) =>
+    request<void>(http.post('/api/apiKey/delete', { apiKeyId })),
   users: () => request<UserAccount[]>(http.get('/api/user/list')),
   createUser: (payload: { username: string; password: string; nickName?: string }) =>
     request<UserAccount>(http.post('/api/user/create', payload)),

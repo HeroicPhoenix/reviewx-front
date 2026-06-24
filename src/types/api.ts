@@ -85,6 +85,20 @@ export interface UserAccount {
   createTime?: string
 }
 
+export interface ApiKeyItem {
+  apiKeyId: number
+  apiKeyName: string
+  apiKeyPrefix: string
+  apiKeyStatus: number
+  expireTime?: string
+  lastUsedTime?: string
+  createTime?: string
+}
+
+export interface ApiKeyCreateResult extends ApiKeyItem {
+  apiKey: string
+}
+
 export interface QuestionImportResult {
   totalFileCount?: number
   totalQuestionCount?: number
