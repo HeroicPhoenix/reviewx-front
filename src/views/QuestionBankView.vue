@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { DownloadCloud, Search } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
@@ -27,12 +27,19 @@ const clearBeforeImport = ref(false)
 const questionTypes = ref<string[]>([])
 const error = ref('')
 const importMessage = ref('')
+const jumpPage = ref(1)
+
+const totalPages = computed(() => {
+  if (!page.value) return 1
+  return Math.max(1, Math.ceil(page.value.total / page.value.pageSize))
+})
 
 async function load() {
   loading.value = true
   error.value = ''
   try {
     page.value = await api.searchQuestions(filters)
+    jumpPage.value = page.value.pageNum
   } catch (e) {
     error.value = e instanceof Error ? e.message : '题库加载失败'
   } finally {
@@ -43,6 +50,22 @@ async function load() {
 async function search() {
   filters.pageNum = 1
   await load()
+}
+
+async function changePageSize() {
+  filters.pageNum = 1
+  await load()
+}
+
+async function goPage(pageNum: number) {
+  const next = Math.min(totalPages.value, Math.max(1, pageNum))
+  filters.pageNum = next
+  jumpPage.value = next
+  await load()
+}
+
+async function jumpToPage() {
+  await goPage(Number(jumpPage.value) || 1)
 }
 
 async function openDetail(questionId: string) {
@@ -242,10 +265,25 @@ onMounted(async () => {
           <button class="ghost-button" type="button" @click="openDetail(item.questionId)">查看</button>
         </article>
 
-        <div v-if="page" class="pager">
-          <button class="ghost-button" type="button" :disabled="filters.pageNum <= 1" @click="filters.pageNum--; load()">上一页</button>
-          <span>{{ page.pageNum }} / {{ Math.max(1, Math.ceil(page.total / page.pageSize)) }}</span>
-          <button class="ghost-button" type="button" :disabled="page.pageNum >= Math.ceil(page.total / page.pageSize)" @click="filters.pageNum++; load()">下一页</button>
+        <div v-if="page" class="pager question-pager">
+          <span class="pager-total">共 {{ page.total }} 题</span>
+          <label class="pager-control">
+            <span>每页</span>
+            <select v-model.number="filters.pageSize" @change="changePageSize">
+              <option :value="10">10</option>
+              <option :value="20">20</option>
+              <option :value="50">50</option>
+              <option :value="100">100</option>
+            </select>
+          </label>
+          <button class="ghost-button" type="button" :disabled="filters.pageNum <= 1" @click="goPage(filters.pageNum - 1)">上一页</button>
+          <span>{{ page.pageNum }} / {{ totalPages }}</span>
+          <button class="ghost-button" type="button" :disabled="page.pageNum >= totalPages" @click="goPage(filters.pageNum + 1)">下一页</button>
+          <form class="pager-control" @submit.prevent="jumpToPage">
+            <span>跳至</span>
+            <input v-model.number="jumpPage" min="1" :max="totalPages" type="number" />
+            <button class="ghost-button" type="submit">跳转</button>
+          </form>
         </div>
       </div>
 

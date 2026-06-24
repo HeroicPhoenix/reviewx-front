@@ -689,6 +689,36 @@ select:focus {
   flex-wrap: wrap;
 }
 
+.question-pager {
+  justify-content: flex-start;
+}
+
+.pager-total {
+  color: #294157;
+  font-weight: 800;
+}
+
+.pager-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #617489;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pager-control select,
+.pager-control input {
+  width: 86px;
+  min-height: 38px;
+  border-radius: 12px;
+  padding: 0 10px;
+}
+
+.pager-control input {
+  width: 78px;
+}
+
 .segmented {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
