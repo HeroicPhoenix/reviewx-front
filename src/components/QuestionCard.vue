@@ -45,7 +45,7 @@ function imageSrc(base64?: string) {
   <article class="glass-card question-card" :style="cardStyle">
     <div class="question-card-head">
       <div class="question-meta">
-        <span>{{ question.questionCategory || '题目' }}</span>
+        <span>{{ question.questionCategory || '未分类' }}</span>
         <span>{{ questionTypeText(question.questionType) }}</span>
         <span v-if="question.questionYear">{{ question.questionYear }}</span>
         <span v-if="question.questionSource">{{ question.questionSource }}</span>

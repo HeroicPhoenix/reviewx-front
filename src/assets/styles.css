@@ -833,6 +833,39 @@ th {
   font-size: 13px;
 }
 
+.record-table th,
+.record-table td {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.table-link {
+  border: 0;
+  padding: 0;
+  color: #286ed7;
+  font: inherit;
+  font-weight: 800;
+  overflow-wrap: anywhere;
+  background: transparent;
+}
+
+.table-link:hover {
+  text-decoration: underline;
+}
+
+.record-detail-dialog {
+  display: grid;
+  gap: 14px;
+  width: min(900px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+}
+
+.record-detail-dialog .modal-head {
+  border-radius: 20px;
+  padding: 16px;
+}
+
 .empty-state {
   display: grid;
   gap: 6px;

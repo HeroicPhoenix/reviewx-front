@@ -255,7 +255,7 @@ onMounted(async () => {
         <article v-for="item in page?.list" :key="item.questionId" class="question-row glass-card">
           <div>
             <div class="question-meta">
-              <span>{{ item.questionCategory || '题目' }}</span>
+              <span>{{ item.questionCategory || '未分类' }}</span>
               <span>{{ item.questionType === 2 ? '多选' : '单选' }}</span>
               <span>{{ item.questionYear || '未知年份' }}</span>
               <span>{{ item.questionSource || '未知来源' }}</span>
