@@ -54,9 +54,10 @@ export const api = {
   questionTypes: () => request<string[]>(http.get('/api/question/typeList')),
   questionDetail: (questionId: string) =>
     request<Question>(http.get('/api/question/detail', { params: { questionId } })),
-  importFromDocsZip: (file: File) => {
+  importFromDocsZip: (file: File, clearBeforeImport = false) => {
     const formData = new FormData()
     formData.append('file', file)
+    formData.append('clearBeforeImport', String(clearBeforeImport))
     return request<QuestionImportResult>(
       http.post('/api/question/importFromDocsZip', formData, { timeout: 120000 }),
     )

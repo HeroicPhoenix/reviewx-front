@@ -20,6 +20,10 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const importing = ref(false)
 const zipInput = ref<HTMLInputElement | null>(null)
+const importDialogOpen = ref(false)
+const importDragActive = ref(false)
+const importFile = ref<File | null>(null)
+const clearBeforeImport = ref(false)
 const questionTypes = ref<string[]>([])
 const error = ref('')
 const importMessage = ref('')
@@ -52,6 +56,19 @@ async function openDetail(questionId: string) {
   }
 }
 
+function openImportDialog() {
+  if (importing.value) return
+  importDialogOpen.value = true
+  importMessage.value = ''
+  error.value = ''
+}
+
+function closeImportDialog() {
+  if (importing.value) return
+  importDialogOpen.value = false
+  importDragActive.value = false
+}
+
 function openZipPicker() {
   if (importing.value) return
   zipInput.value?.click()
@@ -63,13 +80,42 @@ async function handleZipSelected(event: Event) {
   input.value = ''
 
   if (!file) return
+  selectImportFile(file)
+}
+
+function selectImportFile(file: File) {
   if (!file.name.toLowerCase().endsWith('.zip')) {
     importMessage.value = ''
     error.value = '请选择 zip 文件'
     return
   }
 
-  await importZip(file)
+  error.value = ''
+  importFile.value = file
+}
+
+function handleDragEnter() {
+  if (importing.value) return
+  importDragActive.value = true
+}
+
+function handleDragLeave() {
+  importDragActive.value = false
+}
+
+function handleDrop(event: DragEvent) {
+  importDragActive.value = false
+  if (importing.value) return
+  const file = event.dataTransfer?.files?.[0]
+  if (file) selectImportFile(file)
+}
+
+async function submitImport() {
+  if (!importFile.value) {
+    error.value = '请先选择 zip 文件'
+    return
+  }
+  await importZip(importFile.value)
 }
 
 async function importZip(file: File) {
@@ -78,8 +124,11 @@ async function importZip(file: File) {
   error.value = ''
   importing.value = true
   try {
-    const result = await api.importFromDocsZip(file)
+    const result = await api.importFromDocsZip(file, clearBeforeImport.value)
     importMessage.value = `导入完成：${result.successQuestionCount ?? 0}/${result.totalQuestionCount ?? 0} 道题成功，失败 ${result.failedQuestionCount ?? 0} 道`
+    importDialogOpen.value = false
+    importFile.value = null
+    clearBeforeImport.value = false
     await loadQuestionTypes()
     await load()
   } catch (e) {
@@ -109,17 +158,58 @@ onMounted(async () => {
         <p>题库</p>
         <h1>搜索、查看答案和导入题目</h1>
       </div>
-      <button class="ghost-button" type="button" :disabled="importing" @click="openZipPicker">
+      <button class="ghost-button" type="button" :disabled="importing" @click="openImportDialog">
         <DownloadCloud :size="17" />
         {{ importing ? '导入中...' : '上传 zip 导入' }}
       </button>
-      <input
-        ref="zipInput"
-        class="file-input"
-        type="file"
-        accept=".zip,application/zip,application/x-zip-compressed"
-        @change="handleZipSelected"
-      />
+    </div>
+
+    <div v-if="importDialogOpen" class="modal-backdrop" @click.self="closeImportDialog">
+      <div class="import-dialog glass-card">
+        <div class="modal-head">
+          <div>
+            <p>导入题库</p>
+            <h2>上传 ZIP 文件</h2>
+          </div>
+          <button class="icon-button" type="button" :disabled="importing" @click="closeImportDialog">×</button>
+        </div>
+
+        <button
+          class="zip-drop-zone"
+          :class="{ active: importDragActive }"
+          type="button"
+          :disabled="importing"
+          @click="openZipPicker"
+          @dragover.prevent="handleDragEnter"
+          @dragenter.prevent="handleDragEnter"
+          @dragleave.prevent="handleDragLeave"
+          @drop.prevent="handleDrop"
+        >
+          <DownloadCloud :size="34" />
+          <strong>{{ importFile?.name || '点击选择 ZIP 文件，或拖拽到这里' }}</strong>
+          <span>{{ importFile ? `${(importFile.size / 1024 / 1024).toFixed(2)} MB` : '仅支持 .zip 文件' }}</span>
+        </button>
+
+        <label class="check-row">
+          <input v-model="clearBeforeImport" type="checkbox" :disabled="importing" />
+          <span>导入前清除原本题库内容</span>
+        </label>
+
+        <input
+          ref="zipInput"
+          class="file-input"
+          type="file"
+          accept=".zip,application/zip,application/x-zip-compressed"
+          @change="handleZipSelected"
+        />
+
+        <div class="modal-actions">
+          <button class="ghost-button" type="button" :disabled="importing" @click="closeImportDialog">取消</button>
+          <button class="primary-button" type="button" :disabled="!importFile || importing" @click="submitImport">
+            {{ importing ? '导入中...' : '导入' }}
+          </button>
+        </div>
+      </div>
     </div>
 
     <form class="filter-bar glass-card" @submit.prevent="search">
