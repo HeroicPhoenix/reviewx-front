@@ -126,11 +126,6 @@ onMounted(loadQuestionTypes)
         <button type="button" :class="{ active: mode === 'order' }" @click="mode = 'order'">顺序</button>
         <button type="button" :class="{ active: mode === 'wrong' }" @click="mode = 'wrong'">错题</button>
       </div>
-      <div v-if="mode === 'random'" class="segmented random-scope">
-        <button type="button" :class="{ active: randomScope === 'all' }" @click="randomScope = 'all'">全部</button>
-        <button type="button" :class="{ active: randomScope === 'done' }" @click="randomScope = 'done'">已做</button>
-        <button type="button" :class="{ active: randomScope === 'undone' }" @click="randomScope = 'undone'">未做</button>
-      </div>
       <select v-model="filters.questionType" aria-label="科目分类">
         <option value="">全部分类</option>
         <option v-for="type in questionTypes" :key="type" :value="type">{{ type }}</option>
@@ -139,6 +134,14 @@ onMounted(loadQuestionTypes)
       <input v-model.trim="filters.questionSource" placeholder="来源" />
       <input v-if="mode !== 'order'" v-model.number="filters.size" min="1" max="50" type="number" placeholder="数量" />
       <input v-if="mode === 'order'" v-model.number="filters.pageNum" min="1" type="number" placeholder="页码" />
+    </div>
+
+    <div v-if="mode === 'random'" class="random-scope-panel glass-card">
+      <div class="segmented random-scope">
+        <button type="button" :class="{ active: randomScope === 'all' }" @click="randomScope = 'all'">全部</button>
+        <button type="button" :class="{ active: randomScope === 'done' }" @click="randomScope = 'done'">已做</button>
+        <button type="button" :class="{ active: randomScope === 'undone' }" @click="randomScope = 'undone'">未做</button>
+      </div>
     </div>
 
     <div v-if="error" class="notice error">{{ error }}</div>

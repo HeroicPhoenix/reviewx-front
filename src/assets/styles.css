@@ -746,7 +746,14 @@ select:focus {
 }
 
 .random-scope {
-  min-width: 180px;
+  width: min(360px, 100%);
+}
+
+.random-scope-panel {
+  display: flex;
+  align-items: center;
+  border-radius: 18px;
+  padding: 10px;
 }
 
 .segmented button.active {
