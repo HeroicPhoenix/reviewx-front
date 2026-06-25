@@ -403,10 +403,17 @@ select:focus {
 .filter-bar,
 .practice-controls {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
   border-radius: 22px;
   padding: 14px;
+}
+
+.filter-bar {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.practice-controls {
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
 
 .notice {
@@ -864,6 +871,26 @@ th {
 .record-detail-dialog .modal-head {
   border-radius: 20px;
   padding: 16px;
+}
+
+.record-detail-dialog .glass-card {
+  border-color: rgba(211, 222, 235, 0.95);
+  background: #f7fbff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.record-detail-dialog .question-card {
+  background: #f8fbff;
+}
+
+.record-detail-dialog .option-button,
+.record-detail-dialog .answer-panel {
+  background: #ffffff;
+}
+
+.record-detail-dialog .option-button.correct {
+  background: #effcf6;
 }
 
 .empty-state {

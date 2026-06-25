@@ -21,6 +21,7 @@ export interface QuestionFilters {
   pageNum?: number
   pageSize?: number
   size?: number
+  randomScope?: 'all' | 'done' | 'undone'
 }
 
 export interface RecordFilters {

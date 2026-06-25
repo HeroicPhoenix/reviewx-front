@@ -8,8 +8,10 @@ import type { Question, SubmitAnswerResult } from '@/types/api'
 import { formatLocalDateTime, formatMs } from '@/utils/time'
 
 type Mode = 'random' | 'order' | 'wrong'
+type RandomScope = 'all' | 'done' | 'undone'
 
 const mode = ref<Mode>('random')
+const randomScope = ref<RandomScope>('all')
 const filters = reactive({
   questionType: '',
   questionYear: '',
@@ -42,7 +44,7 @@ async function loadQuestions() {
   error.value = ''
   resetAnswerState()
   try {
-    if (mode.value === 'random') questions.value = await api.randomList(filters)
+    if (mode.value === 'random') questions.value = await api.randomList({ ...filters, randomScope: randomScope.value })
     if (mode.value === 'wrong') questions.value = await api.wrongList(filters)
     if (mode.value === 'order') {
       const page = await api.orderList(filters)
@@ -123,6 +125,11 @@ onMounted(loadQuestionTypes)
         <button type="button" :class="{ active: mode === 'random' }" @click="mode = 'random'">随机</button>
         <button type="button" :class="{ active: mode === 'order' }" @click="mode = 'order'">顺序</button>
         <button type="button" :class="{ active: mode === 'wrong' }" @click="mode = 'wrong'">错题</button>
+      </div>
+      <div v-if="mode === 'random'" class="segmented random-scope">
+        <button type="button" :class="{ active: randomScope === 'all' }" @click="randomScope = 'all'">全部随机</button>
+        <button type="button" :class="{ active: randomScope === 'done' }" @click="randomScope = 'done'">已做随机</button>
+        <button type="button" :class="{ active: randomScope === 'undone' }" @click="randomScope = 'undone'">未做随机</button>
       </div>
       <select v-model="filters.questionType" aria-label="科目分类">
         <option value="">全部分类</option>
