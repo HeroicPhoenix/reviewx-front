@@ -740,8 +740,13 @@ select:focus {
   padding: 10px;
   color: #607286;
   font-weight: 800;
+  white-space: nowrap;
   background: transparent;
   transition: background 0.18s ease, color 0.18s ease, transform 0.16s ease;
+}
+
+.random-scope {
+  min-width: 180px;
 }
 
 .segmented button.active {

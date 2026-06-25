@@ -127,9 +127,9 @@ onMounted(loadQuestionTypes)
         <button type="button" :class="{ active: mode === 'wrong' }" @click="mode = 'wrong'">错题</button>
       </div>
       <div v-if="mode === 'random'" class="segmented random-scope">
-        <button type="button" :class="{ active: randomScope === 'all' }" @click="randomScope = 'all'">全部随机</button>
-        <button type="button" :class="{ active: randomScope === 'done' }" @click="randomScope = 'done'">已做随机</button>
-        <button type="button" :class="{ active: randomScope === 'undone' }" @click="randomScope = 'undone'">未做随机</button>
+        <button type="button" :class="{ active: randomScope === 'all' }" @click="randomScope = 'all'">全部</button>
+        <button type="button" :class="{ active: randomScope === 'done' }" @click="randomScope = 'done'">已做</button>
+        <button type="button" :class="{ active: randomScope === 'undone' }" @click="randomScope = 'undone'">未做</button>
       </div>
       <select v-model="filters.questionType" aria-label="科目分类">
         <option value="">全部分类</option>
