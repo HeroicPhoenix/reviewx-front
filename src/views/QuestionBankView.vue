@@ -442,13 +442,13 @@ onMounted(async () => {
             </label>
             <div class="option-editor-actions full">
               <div class="option-editor-buttons">
-                <button class="ghost-button option-count-button" type="button" :disabled="editOptionCount <= 4" @click="removeOption">
-                  <Minus :size="16" />
-                  减少选项
-                </button>
                 <button class="ghost-button option-count-button" type="button" :disabled="editOptionCount >= optionFields.length" @click="addOption">
                   <Plus :size="16" />
                   添加选项
+                </button>
+                <button class="ghost-button option-count-button" type="button" :disabled="editOptionCount <= 4" @click="removeOption">
+                  <Minus :size="16" />
+                  减少选项
                 </button>
               </div>
               <span>{{ editOptionCount }} / {{ optionFields.length }}</span>
