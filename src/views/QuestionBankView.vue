@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { DownloadCloud, Search } from 'lucide-vue-next'
+import { DownloadCloud, Pencil, Search } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
-import type { PageResult, Question } from '@/types/api'
+import type { PageResult, Question, QuestionUpdatePayload } from '@/types/api'
 
 const filters = reactive({
   keyword: '',
@@ -28,6 +28,41 @@ const questionTypes = ref<string[]>([])
 const error = ref('')
 const importMessage = ref('')
 const jumpPage = ref(1)
+const editDialogOpen = ref(false)
+const editLoading = ref(false)
+const editSaving = ref(false)
+const editError = ref('')
+
+const editForm = reactive({
+  questionId: '',
+  questionCategory: '',
+  questionContent: '',
+  questionImageBase64: '',
+  option1: '',
+  option2: '',
+  option3: '',
+  option4: '',
+  option5: '',
+  option6: '',
+  option7: '',
+  option8: '',
+  answerText: '',
+  answerSource: '',
+  questionYear: '',
+  questionSource: '',
+  correctRate: '',
+})
+
+const optionFields = [
+  { key: 'option1', label: 'A' },
+  { key: 'option2', label: 'B' },
+  { key: 'option3', label: 'C' },
+  { key: 'option4', label: 'D' },
+  { key: 'option5', label: 'E' },
+  { key: 'option6', label: 'F' },
+  { key: 'option7', label: 'G' },
+  { key: 'option8', label: 'H' },
+] as const
 
 const totalPages = computed(() => {
   if (!page.value) return 1
@@ -76,6 +111,108 @@ async function openDetail(questionId: string) {
     error.value = e instanceof Error ? e.message : '详情加载失败'
   } finally {
     detailLoading.value = false
+  }
+}
+
+async function openEdit(questionId: string) {
+  editDialogOpen.value = true
+  editLoading.value = true
+  editError.value = ''
+  error.value = ''
+  try {
+    const question = await api.questionDetail(questionId)
+    fillEditForm(question)
+  } catch (e) {
+    editError.value = e instanceof Error ? e.message : '题目加载失败'
+  } finally {
+    editLoading.value = false
+  }
+}
+
+function closeEditDialog() {
+  if (editSaving.value) return
+  editDialogOpen.value = false
+  editError.value = ''
+}
+
+function fillEditForm(question: Question) {
+  editForm.questionId = question.questionId
+  editForm.questionCategory = question.questionCategory ?? ''
+  editForm.questionContent = question.questionContent ?? ''
+  editForm.questionImageBase64 = question.questionImageBase64 ?? ''
+  editForm.option1 = question.option1 ?? ''
+  editForm.option2 = question.option2 ?? ''
+  editForm.option3 = question.option3 ?? ''
+  editForm.option4 = question.option4 ?? ''
+  editForm.option5 = question.option5 ?? ''
+  editForm.option6 = question.option6 ?? ''
+  editForm.option7 = question.option7 ?? ''
+  editForm.option8 = question.option8 ?? ''
+  editForm.answerText = (question.answerContent ?? []).join('、')
+  editForm.answerSource = question.answerSource ?? ''
+  editForm.questionYear = question.questionYear ?? ''
+  editForm.questionSource = question.questionSource ?? ''
+  editForm.correctRate = question.correctRate ?? ''
+}
+
+function parseAnswerText(value: string) {
+  return value
+    .split(/[,\s，、]+/)
+    .map((item) => item.trim().toUpperCase())
+    .filter(Boolean)
+}
+
+function optionalValue(value: string) {
+  const next = value.trim()
+  return next || undefined
+}
+
+async function saveEdit() {
+  editError.value = ''
+  const answers = parseAnswerText(editForm.answerText)
+  if (!editForm.questionContent.trim()) {
+    editError.value = '题干不能为空'
+    return
+  }
+  if (!answers.length) {
+    editError.value = '答案不能为空'
+    return
+  }
+
+  const payload: QuestionUpdatePayload = {
+    questionId: editForm.questionId,
+    questionCategory: optionalValue(editForm.questionCategory),
+    questionContent: editForm.questionContent.trim(),
+    questionImageBase64: optionalValue(editForm.questionImageBase64),
+    option1: editForm.option1.trim(),
+    option2: editForm.option2.trim(),
+    option3: editForm.option3.trim(),
+    option4: editForm.option4.trim(),
+    option5: editForm.option5.trim(),
+    option6: editForm.option6.trim(),
+    option7: editForm.option7.trim(),
+    option8: editForm.option8.trim(),
+    answerContent: answers,
+    answerSource: optionalValue(editForm.answerSource),
+    questionYear: optionalValue(editForm.questionYear),
+    questionSource: optionalValue(editForm.questionSource),
+    correctRate: optionalValue(editForm.correctRate),
+  }
+
+  editSaving.value = true
+  try {
+    const saved = await api.updateQuestion(payload)
+    importMessage.value = '题目已保存'
+    editDialogOpen.value = false
+    if (detail.value?.questionId === saved.questionId) {
+      detail.value = saved
+    }
+    await loadQuestionTypes()
+    await load()
+  } catch (e) {
+    editError.value = e instanceof Error ? e.message : '保存失败'
+  } finally {
+    editSaving.value = false
   }
 }
 
@@ -235,6 +372,73 @@ onMounted(async () => {
       </div>
     </div>
 
+    <div v-if="editDialogOpen" class="modal-backdrop" @click.self="closeEditDialog">
+      <form class="edit-dialog glass-card" @submit.prevent="saveEdit">
+        <div class="modal-head">
+          <div>
+            <p>编辑题目</p>
+            <h2>{{ editForm.questionId || '题目详情' }}</h2>
+          </div>
+          <button class="icon-button" type="button" :disabled="editSaving" @click="closeEditDialog">×</button>
+        </div>
+
+        <EmptyState v-if="editLoading" title="加载中..." description="正在读取题目详情。" />
+        <template v-else>
+          <div class="edit-grid">
+            <label>
+              <span>题目ID</span>
+              <input v-model="editForm.questionId" disabled />
+            </label>
+            <label>
+              <span>题目分类</span>
+              <input v-model.trim="editForm.questionCategory" placeholder="例如：言语理解" />
+            </label>
+            <label>
+              <span>年份</span>
+              <input v-model.trim="editForm.questionYear" placeholder="例如：2024" />
+            </label>
+            <label>
+              <span>出处</span>
+              <input v-model.trim="editForm.questionSource" placeholder="例如：国考 / 北京市考" />
+            </label>
+            <label>
+              <span>机构正确率</span>
+              <input v-model.trim="editForm.correctRate" placeholder="例如：0.49" />
+            </label>
+            <label>
+              <span>答案出处</span>
+              <input v-model.trim="editForm.answerSource" placeholder="答案来源或解析出处" />
+            </label>
+            <label class="full">
+              <span>题干</span>
+              <textarea v-model="editForm.questionContent" rows="6" required />
+            </label>
+            <label class="full">
+              <span>题目图片 Base64</span>
+              <textarea v-model="editForm.questionImageBase64" rows="3" placeholder="没有图片可留空" />
+            </label>
+            <label v-for="option in optionFields" :key="option.key">
+              <span>选项 {{ option.label }}</span>
+              <textarea v-model="editForm[option.key]" rows="3" />
+            </label>
+            <label class="full">
+              <span>答案</span>
+              <input v-model.trim="editForm.answerText" placeholder="单选填 A，多选填 A、C" />
+            </label>
+          </div>
+
+          <p v-if="editError" class="notice error">{{ editError }}</p>
+
+          <div class="modal-actions">
+            <button class="ghost-button" type="button" :disabled="editSaving" @click="closeEditDialog">取消</button>
+            <button class="primary-button" type="submit" :disabled="editSaving">
+              {{ editSaving ? '保存中...' : '保存' }}
+            </button>
+          </div>
+        </template>
+      </form>
+    </div>
+
     <form class="filter-bar glass-card" @submit.prevent="search">
       <input v-model.trim="filters.keyword" placeholder="关键词" />
       <select v-model="filters.questionType" aria-label="科目分类">
@@ -262,7 +466,13 @@ onMounted(async () => {
             </div>
             <strong>{{ item.questionContent || item.questionId }}</strong>
           </div>
-          <button class="ghost-button" type="button" @click="openDetail(item.questionId)">查看</button>
+          <div class="question-actions">
+            <button class="ghost-button" type="button" @click="openDetail(item.questionId)">查看</button>
+            <button class="ghost-button" type="button" @click="openEdit(item.questionId)">
+              <Pencil :size="16" />
+              编辑
+            </button>
+          </div>
         </article>
 
         <div v-if="page" class="pager question-pager">

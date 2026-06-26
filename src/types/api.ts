@@ -48,6 +48,26 @@ export interface Question {
   correctRate?: string
 }
 
+export interface QuestionUpdatePayload {
+  questionId: string
+  questionCategory?: string
+  questionContent: string
+  questionImageBase64?: string
+  option1?: string
+  option2?: string
+  option3?: string
+  option4?: string
+  option5?: string
+  option6?: string
+  option7?: string
+  option8?: string
+  answerContent: string[]
+  answerSource?: string
+  questionYear?: string
+  questionSource?: string
+  correctRate?: string
+}
+
 export interface SubmitAnswerResult {
   answerRecordId: number
   questionId: string

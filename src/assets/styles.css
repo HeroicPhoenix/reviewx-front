@@ -443,6 +443,16 @@ select:focus {
   padding: 22px;
 }
 
+.edit-dialog {
+  display: grid;
+  gap: 16px;
+  width: min(920px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border-radius: 24px;
+  padding: 22px;
+}
+
 .modal-head,
 .modal-actions {
   display: flex;
@@ -545,6 +555,14 @@ select:focus {
   padding: 16px;
 }
 
+.question-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .question-row strong {
   display: -webkit-box;
   overflow: hidden;
@@ -568,6 +586,34 @@ select:focus {
   font-size: 12px;
   font-weight: 800;
   background: rgba(255, 255, 255, 0.7);
+}
+
+.edit-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.edit-grid label {
+  display: grid;
+  gap: 7px;
+  color: #294157;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.edit-grid .full {
+  grid-column: 1 / -1;
+}
+
+.edit-grid textarea {
+  min-height: 94px;
+  resize: vertical;
+}
+
+.edit-grid input:disabled {
+  color: #6a7a8d;
+  background: rgba(238, 244, 250, 0.72);
 }
 
 .detail-pane {
@@ -1008,6 +1054,14 @@ th {
   .question-row {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .question-actions {
+    justify-content: flex-start;
+  }
+
+  .edit-grid {
+    grid-template-columns: 1fr;
   }
 
   .question-card-head {

@@ -9,6 +9,7 @@ import type {
   PageResult,
   Question,
   QuestionImportResult,
+  QuestionUpdatePayload,
   SubmitAnswerResult,
   UserAccount,
 } from '@/types/api'
@@ -55,6 +56,8 @@ export const api = {
   questionTypes: () => request<string[]>(http.get('/api/question/typeList')),
   questionDetail: (questionId: string) =>
     request<Question>(http.get('/api/question/detail', { params: { questionId } })),
+  updateQuestion: (payload: QuestionUpdatePayload) =>
+    request<Question>(http.post('/api/question/update', payload)),
   importFromDocsZip: (file: File, clearBeforeImport = false) => {
     const formData = new FormData()
     formData.append('file', file)
