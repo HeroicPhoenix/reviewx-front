@@ -214,6 +214,19 @@ function handleCorrectRateInput() {
   editForm.correctRate = decimalParts.length ? `${integerPart}.${decimalParts.join('')}` : integerPart
 }
 
+function parsePercentInput(value: string) {
+  const raw = value.trim()
+  if (!raw) return { valid: true, value: '' }
+  if (!/^\d+(\.\d+)?$/.test(raw)) return { valid: false, value: '' }
+
+  const numberValue = Number(raw)
+  if (!Number.isFinite(numberValue) || numberValue < 0 || numberValue > 100) {
+    return { valid: false, value: '' }
+  }
+
+  return { valid: true, value: normalizeQuestionCorrectRateInput(raw) }
+}
+
 function imageSrc(base64?: string) {
   const value = base64?.trim()
   if (!value) return ''
@@ -273,10 +286,9 @@ async function saveEdit() {
     editError.value = '答案不能为空'
     return
   }
-  const normalizedCorrectRate = normalizeQuestionCorrectRateInput(editForm.correctRate)
-  const correctRateNumber = normalizedCorrectRate === '' ? undefined : Number(normalizedCorrectRate)
-  if (correctRateNumber !== undefined && (!Number.isFinite(correctRateNumber) || correctRateNumber < 0 || correctRateNumber > 100)) {
-    editError.value = '机构正确率必须是 0 到 100 之间的百分比'
+  const correctRate = parsePercentInput(editForm.correctRate)
+  if (!correctRate.valid) {
+    editError.value = '机构正确率必须是 0 到 100 之间的数字百分比'
     return
   }
 
@@ -297,7 +309,7 @@ async function saveEdit() {
     questionImageBase64: editForm.questionImageBase64.trim(),
     questionYear: optionalValue(editForm.questionYear),
     questionSource: optionalValue(editForm.questionSource),
-    correctRate: normalizedCorrectRate ? `${normalizedCorrectRate}%` : undefined,
+    correctRate: correctRate.value ? `${correctRate.value}%` : undefined,
   }
 
   editSaving.value = true
@@ -509,9 +521,11 @@ onMounted(async () => {
               <span>机构正确率（%）</span>
               <input
                 v-model.trim="editForm.correctRate"
+                type="number"
                 inputmode="decimal"
                 min="0"
                 max="100"
+                step="0.01"
                 placeholder="例如：49"
                 @input="handleCorrectRateInput"
               />
