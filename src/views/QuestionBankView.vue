@@ -47,7 +47,7 @@ const editForm = reactive({
   option6: '',
   option7: '',
   option8: '',
-  answerText: '',
+  answerContent: [] as string[],
   answerSource: '',
   questionYear: '',
   questionSource: '',
@@ -153,7 +153,7 @@ function fillEditForm(question: Question) {
   editForm.option6 = question.option6 ?? ''
   editForm.option7 = question.option7 ?? ''
   editForm.option8 = question.option8 ?? ''
-  editForm.answerText = (question.answerContent ?? []).join('、')
+  editForm.answerContent = [...(question.answerContent ?? [])]
   editForm.answerSource = question.answerSource ?? ''
   editForm.questionYear = question.questionYear ?? ''
   editForm.questionSource = question.questionSource ?? ''
@@ -168,11 +168,12 @@ function addOption() {
   editOptionCount.value = Math.min(optionFields.length, editOptionCount.value + 1)
 }
 
-function parseAnswerText(value: string) {
-  return value
-    .split(/[,\s，、]+/)
-    .map((item) => item.trim().toUpperCase())
-    .filter(Boolean)
+function toggleAnswer(label: string) {
+  if (editForm.answerContent.includes(label)) {
+    editForm.answerContent = editForm.answerContent.filter((item) => item !== label)
+    return
+  }
+  editForm.answerContent = [...editForm.answerContent, label].sort()
 }
 
 function optionalValue(value: string) {
@@ -182,7 +183,8 @@ function optionalValue(value: string) {
 
 async function saveEdit() {
   editError.value = ''
-  const answers = parseAnswerText(editForm.answerText)
+  const visibleAnswerLabels = visibleOptionFields.value.map((option) => option.label)
+  const answers = editForm.answerContent.filter((answer) => visibleAnswerLabels.some((label) => label === answer))
   if (!editForm.questionContent.trim()) {
     editError.value = '题干不能为空'
     return
@@ -437,10 +439,24 @@ onMounted(async () => {
               </button>
               <span>{{ editOptionCount }} / {{ optionFields.length }}</span>
             </div>
-            <label class="full">
+            <div class="answer-field full">
               <span>答案</span>
-              <input v-model.trim="editForm.answerText" placeholder="单选填 A，多选填 A、C" />
-            </label>
+              <div class="answer-checkbox-grid">
+                <label
+                  v-for="option in visibleOptionFields"
+                  :key="option.label"
+                  class="answer-checkbox"
+                  :class="{ active: editForm.answerContent.includes(option.label) }"
+                >
+                  <input
+                    type="checkbox"
+                    :checked="editForm.answerContent.includes(option.label)"
+                    @change="toggleAnswer(option.label)"
+                  />
+                  <span>{{ option.label }}</span>
+                </label>
+              </div>
+            </div>
             <label class="full">
               <span>题目图片 Base64</span>
               <textarea v-model="editForm.questionImageBase64" rows="3" placeholder="没有图片可留空" />

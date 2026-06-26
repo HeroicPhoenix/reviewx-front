@@ -604,7 +604,8 @@ textarea:focus {
   gap: 12px;
 }
 
-.edit-grid label {
+.edit-grid label,
+.answer-field {
   display: grid;
   gap: 7px;
   color: #294157;
@@ -644,6 +645,52 @@ textarea:focus {
 
 .add-option-button {
   min-height: 38px;
+}
+
+.answer-checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.answer-checkbox {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  border: 1px solid rgba(92, 116, 143, 0.16);
+  border-radius: 14px;
+  color: #526d83;
+  background: #ffffff;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+.answer-checkbox input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.answer-checkbox span {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  background: rgba(82, 109, 131, 0.08);
+}
+
+.answer-checkbox.active {
+  border-color: rgba(44, 169, 126, 0.5);
+  color: #177358;
+  background: #effcf6;
+  box-shadow: 0 10px 20px rgba(44, 169, 126, 0.12);
+}
+
+.answer-checkbox.active span {
+  background: rgba(44, 169, 126, 0.14);
 }
 
 .detail-pane {
