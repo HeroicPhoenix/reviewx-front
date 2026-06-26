@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { DownloadCloud, Pencil, Plus, Search } from 'lucide-vue-next'
+import { DownloadCloud, Minus, Pencil, Plus, Search } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
@@ -166,6 +166,14 @@ function fillEditForm(question: Question) {
 
 function addOption() {
   editOptionCount.value = Math.min(optionFields.length, editOptionCount.value + 1)
+}
+
+function removeOption() {
+  if (editOptionCount.value <= 4) return
+  const removedOption = optionFields[editOptionCount.value - 1]
+  editForm[removedOption.key] = ''
+  editForm.answerContent = editForm.answerContent.filter((answer) => answer !== removedOption.label)
+  editOptionCount.value -= 1
 }
 
 function toggleAnswer(label: string) {
@@ -433,10 +441,16 @@ onMounted(async () => {
               <textarea v-model="editForm[option.key as OptionKey]" rows="3" />
             </label>
             <div class="option-editor-actions full">
-              <button class="ghost-button add-option-button" type="button" :disabled="editOptionCount >= optionFields.length" @click="addOption">
-                <Plus :size="16" />
-                添加选项
-              </button>
+              <div class="option-editor-buttons">
+                <button class="ghost-button option-count-button" type="button" :disabled="editOptionCount <= 4" @click="removeOption">
+                  <Minus :size="16" />
+                  减少选项
+                </button>
+                <button class="ghost-button option-count-button" type="button" :disabled="editOptionCount >= optionFields.length" @click="addOption">
+                  <Plus :size="16" />
+                  添加选项
+                </button>
+              </div>
               <span>{{ editOptionCount }} / {{ optionFields.length }}</span>
             </div>
             <div class="answer-field full">

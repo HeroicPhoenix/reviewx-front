@@ -643,7 +643,13 @@ textarea:focus {
   background: #ffffff;
 }
 
-.add-option-button {
+.option-editor-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.option-count-button {
   min-height: 38px;
 }
 
