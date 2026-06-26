@@ -605,7 +605,8 @@ textarea:focus {
 }
 
 .edit-grid label,
-.answer-field {
+.answer-field,
+.question-image-editor {
   display: grid;
   gap: 7px;
   color: #294157;
@@ -697,6 +698,41 @@ textarea:focus {
 
 .answer-checkbox.active span {
   background: rgba(44, 169, 126, 0.14);
+}
+
+.question-image-editor {
+  border: 1px solid rgba(92, 116, 143, 0.14);
+  border-radius: 18px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.question-image-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.question-image-preview {
+  display: grid;
+  place-items: center;
+  min-height: 180px;
+  overflow: hidden;
+  border: 1px dashed rgba(92, 116, 143, 0.2);
+  border-radius: 16px;
+  padding: 12px;
+  color: #6a7a8d;
+  background: #f8fbff;
+}
+
+.question-image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  border-radius: 12px;
+  background: #ffffff;
 }
 
 .detail-pane {

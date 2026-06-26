@@ -1,10 +1,11 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { DownloadCloud, Minus, Pencil, Plus, Search } from 'lucide-vue-next'
+import { DownloadCloud, ImagePlus, Minus, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
 import type { PageResult, Question, QuestionUpdatePayload } from '@/types/api'
+import { normalizeQuestionCorrectRateInput } from '@/utils/time'
 
 const filters = reactive({
   keyword: '',
@@ -20,6 +21,7 @@ const loading = ref(false)
 const detailLoading = ref(false)
 const importing = ref(false)
 const zipInput = ref<HTMLInputElement | null>(null)
+const questionImageInput = ref<HTMLInputElement | null>(null)
 const importDialogOpen = ref(false)
 const importDragActive = ref(false)
 const importFile = ref<File | null>(null)
@@ -68,6 +70,16 @@ const optionFields = [
 type OptionKey = (typeof optionFields)[number]['key']
 
 const visibleOptionFields = computed(() => optionFields.slice(0, editOptionCount.value))
+
+const editQuestionImageSrc = computed(() => imageSrc(editForm.questionImageBase64))
+
+const editCategoryOptions = computed(() => {
+  const categories = [...questionTypes.value]
+  if (editForm.questionCategory && !categories.includes(editForm.questionCategory)) {
+    categories.unshift(editForm.questionCategory)
+  }
+  return categories
+})
 
 const totalPages = computed(() => {
   if (!page.value) return 1
@@ -157,7 +169,7 @@ function fillEditForm(question: Question) {
   editForm.answerSource = question.answerSource ?? ''
   editForm.questionYear = question.questionYear ?? ''
   editForm.questionSource = question.questionSource ?? ''
-  editForm.correctRate = question.correctRate ?? ''
+  editForm.correctRate = normalizeQuestionCorrectRateInput(question.correctRate)
   const lastFilledOption = optionFields.reduce((lastIndex, option, index) => {
     return question[option.key]?.trim() ? index : lastIndex
   }, -1)
@@ -184,6 +196,66 @@ function toggleAnswer(label: string) {
   editForm.answerContent = [...editForm.answerContent, label].sort()
 }
 
+function keepDigits(value: string) {
+  return value.replace(/\D/g, '')
+}
+
+function handleEditYearInput() {
+  editForm.questionYear = keepDigits(editForm.questionYear).slice(0, 4)
+}
+
+function handleFilterYearInput() {
+  filters.questionYear = keepDigits(filters.questionYear).slice(0, 4)
+}
+
+function handleCorrectRateInput() {
+  const cleaned = editForm.correctRate.replace(/[^\d.]/g, '')
+  const [integerPart, ...decimalParts] = cleaned.split('.')
+  editForm.correctRate = decimalParts.length ? `${integerPart}.${decimalParts.join('')}` : integerPart
+}
+
+function imageSrc(base64?: string) {
+  const value = base64?.trim()
+  if (!value) return ''
+  return value.startsWith('data:') ? value : `data:image/png;base64,${value}`
+}
+
+function openQuestionImagePicker() {
+  questionImageInput.value?.click()
+}
+
+async function handleQuestionImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    editError.value = '请选择图片文件'
+    return
+  }
+
+  try {
+    editForm.questionImageBase64 = await readFileAsDataUrl(file)
+    editError.value = ''
+  } catch (e) {
+    editError.value = e instanceof Error ? e.message : '图片读取失败'
+  }
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.onerror = () => reject(new Error('图片读取失败'))
+    reader.readAsDataURL(file)
+  })
+}
+
+function clearQuestionImage() {
+  editForm.questionImageBase64 = ''
+}
+
 function optionalValue(value: string) {
   const next = value.trim()
   return next || undefined
@@ -201,6 +273,12 @@ async function saveEdit() {
     editError.value = '答案不能为空'
     return
   }
+  const normalizedCorrectRate = normalizeQuestionCorrectRateInput(editForm.correctRate)
+  const correctRateNumber = normalizedCorrectRate === '' ? undefined : Number(normalizedCorrectRate)
+  if (correctRateNumber !== undefined && (!Number.isFinite(correctRateNumber) || correctRateNumber < 0 || correctRateNumber > 100)) {
+    editError.value = '机构正确率必须是 0 到 100 之间的百分比'
+    return
+  }
 
   const payload: QuestionUpdatePayload = {
     questionId: editForm.questionId,
@@ -216,10 +294,10 @@ async function saveEdit() {
     option8: editOptionCount.value >= 8 ? editForm.option8.trim() : '',
     answerContent: answers,
     answerSource: optionalValue(editForm.answerSource),
-    questionImageBase64: optionalValue(editForm.questionImageBase64),
+    questionImageBase64: editForm.questionImageBase64.trim(),
     questionYear: optionalValue(editForm.questionYear),
     questionSource: optionalValue(editForm.questionSource),
-    correctRate: optionalValue(editForm.correctRate),
+    correctRate: normalizedCorrectRate ? `${normalizedCorrectRate}%` : undefined,
   }
 
   editSaving.value = true
@@ -414,19 +492,29 @@ onMounted(async () => {
             </label>
             <label>
               <span>题目分类</span>
-              <input v-model.trim="editForm.questionCategory" placeholder="例如：言语理解" />
+              <select v-model="editForm.questionCategory">
+                <option value="">未分类</option>
+                <option v-for="type in editCategoryOptions" :key="type" :value="type">{{ type }}</option>
+              </select>
             </label>
             <label>
               <span>年份</span>
-              <input v-model.trim="editForm.questionYear" placeholder="例如：2024" />
+              <input v-model.trim="editForm.questionYear" inputmode="numeric" maxlength="4" placeholder="例如：2024" @input="handleEditYearInput" />
             </label>
             <label>
               <span>出处</span>
               <input v-model.trim="editForm.questionSource" placeholder="例如：国考 / 北京市考" />
             </label>
             <label>
-              <span>机构正确率</span>
-              <input v-model.trim="editForm.correctRate" placeholder="例如：0.49" />
+              <span>机构正确率（%）</span>
+              <input
+                v-model.trim="editForm.correctRate"
+                inputmode="decimal"
+                min="0"
+                max="100"
+                placeholder="例如：49"
+                @input="handleCorrectRateInput"
+              />
             </label>
             <label>
               <span>答案出处</span>
@@ -471,10 +559,34 @@ onMounted(async () => {
                 </label>
               </div>
             </div>
-            <label class="full">
-              <span>题目图片 Base64</span>
-              <textarea v-model="editForm.questionImageBase64" rows="3" placeholder="没有图片可留空" />
-            </label>
+            <div class="question-image-editor full">
+              <div class="question-image-editor-head">
+                <span>题目图片</span>
+                <div class="option-editor-buttons">
+                  <button class="ghost-button option-count-button" type="button" @click="openQuestionImagePicker">
+                    <ImagePlus :size="16" />
+                    {{ editQuestionImageSrc ? '替换图片' : '上传图片' }}
+                  </button>
+                  <button class="ghost-button option-count-button danger-button" type="button" :disabled="!editQuestionImageSrc" @click="clearQuestionImage">
+                    <Trash2 :size="16" />
+                    清除图片
+                  </button>
+                </div>
+              </div>
+
+              <div class="question-image-preview">
+                <img v-if="editQuestionImageSrc" :src="editQuestionImageSrc" alt="题目图片预览" />
+                <span v-else>暂无题目图片</span>
+              </div>
+
+              <input
+                ref="questionImageInput"
+                class="file-input"
+                type="file"
+                accept="image/*"
+                @change="handleQuestionImageSelected"
+              />
+            </div>
           </div>
 
           <p v-if="editError" class="notice error">{{ editError }}</p>
@@ -495,7 +607,7 @@ onMounted(async () => {
         <option value="">全部分类</option>
         <option v-for="type in questionTypes" :key="type" :value="type">{{ type }}</option>
       </select>
-      <input v-model.trim="filters.questionYear" placeholder="年份" />
+      <input v-model.trim="filters.questionYear" inputmode="numeric" maxlength="4" placeholder="年份" @input="handleFilterYearInput" />
       <input v-model.trim="filters.questionSource" placeholder="来源" />
       <button class="primary-button" type="submit"><Search :size="17" />搜索</button>
     </form>

@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { usePreferencesStore } from '@/stores/preferences'
 import type { Question } from '@/types/api'
+import { formatQuestionCorrectRate } from '@/utils/time'
 
 const props = defineProps<{
   question: Question
@@ -49,7 +50,7 @@ function imageSrc(base64?: string) {
         <span>{{ questionTypeText(question.questionType) }}</span>
         <span v-if="question.questionYear">{{ question.questionYear }}</span>
         <span v-if="question.questionSource">{{ question.questionSource }}</span>
-        <span v-if="question.correctRate">正确率 {{ question.correctRate }}</span>
+        <span v-if="formatQuestionCorrectRate(question.correctRate)">正确率 {{ formatQuestionCorrectRate(question.correctRate) }}</span>
       </div>
 
       <div class="font-toolbar" aria-label="题目字号">

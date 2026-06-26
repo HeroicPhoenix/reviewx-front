@@ -96,6 +96,10 @@ function nextQuestion(step: number) {
   resetAnswerState()
 }
 
+function handleFilterYearInput() {
+  filters.questionYear = filters.questionYear.replace(/\D/g, '').slice(0, 4)
+}
+
 async function loadQuestionTypes() {
   try {
     questionTypes.value = await api.questionTypes()
@@ -130,7 +134,7 @@ onMounted(loadQuestionTypes)
         <option value="">全部分类</option>
         <option v-for="type in questionTypes" :key="type" :value="type">{{ type }}</option>
       </select>
-      <input v-model.trim="filters.questionYear" placeholder="年份" />
+      <input v-model.trim="filters.questionYear" inputmode="numeric" maxlength="4" placeholder="年份" @input="handleFilterYearInput" />
       <input v-model.trim="filters.questionSource" placeholder="来源" />
       <input v-if="mode !== 'order'" v-model.number="filters.size" min="1" max="50" type="number" placeholder="数量" />
       <input v-if="mode === 'order'" v-model.number="filters.pageNum" min="1" type="number" placeholder="页码" />

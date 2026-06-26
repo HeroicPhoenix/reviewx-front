@@ -16,3 +16,22 @@ export function formatRate(value?: number | string) {
   if (!Number.isFinite(numberValue)) return '0%'
   return `${Math.round(numberValue * 1000) / 10}%`
 }
+
+function trimNumberText(value: number) {
+  return Number.isInteger(value) ? String(value) : String(Math.round(value * 100) / 100)
+}
+
+export function normalizeQuestionCorrectRateInput(value?: string) {
+  const raw = String(value ?? '').trim()
+  if (!raw) return ''
+  const hasPercentSign = raw.includes('%')
+  const numberValue = Number(raw.replace('%', '').trim())
+  if (!Number.isFinite(numberValue)) return ''
+  const percentValue = !hasPercentSign && numberValue > 0 && numberValue <= 1 ? numberValue * 100 : numberValue
+  return trimNumberText(percentValue)
+}
+
+export function formatQuestionCorrectRate(value?: string) {
+  const percentValue = normalizeQuestionCorrectRateInput(value)
+  return percentValue ? `${percentValue}%` : ''
+}
