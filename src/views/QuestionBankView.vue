@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { DownloadCloud, Pencil, Search } from 'lucide-vue-next'
+import { DownloadCloud, Pencil, Plus, Search } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
@@ -32,6 +32,7 @@ const editDialogOpen = ref(false)
 const editLoading = ref(false)
 const editSaving = ref(false)
 const editError = ref('')
+const editOptionCount = ref(4)
 
 const editForm = reactive({
   questionId: '',
@@ -63,6 +64,10 @@ const optionFields = [
   { key: 'option7', label: 'G' },
   { key: 'option8', label: 'H' },
 ] as const
+
+type OptionKey = (typeof optionFields)[number]['key']
+
+const visibleOptionFields = computed(() => optionFields.slice(0, editOptionCount.value))
 
 const totalPages = computed(() => {
   if (!page.value) return 1
@@ -153,6 +158,14 @@ function fillEditForm(question: Question) {
   editForm.questionYear = question.questionYear ?? ''
   editForm.questionSource = question.questionSource ?? ''
   editForm.correctRate = question.correctRate ?? ''
+  const lastFilledOption = optionFields.reduce((lastIndex, option, index) => {
+    return question[option.key]?.trim() ? index : lastIndex
+  }, -1)
+  editOptionCount.value = Math.max(4, lastFilledOption + 1)
+}
+
+function addOption() {
+  editOptionCount.value = Math.min(optionFields.length, editOptionCount.value + 1)
 }
 
 function parseAnswerText(value: string) {
@@ -183,17 +196,17 @@ async function saveEdit() {
     questionId: editForm.questionId,
     questionCategory: optionalValue(editForm.questionCategory),
     questionContent: editForm.questionContent.trim(),
-    questionImageBase64: optionalValue(editForm.questionImageBase64),
-    option1: editForm.option1.trim(),
-    option2: editForm.option2.trim(),
-    option3: editForm.option3.trim(),
-    option4: editForm.option4.trim(),
-    option5: editForm.option5.trim(),
-    option6: editForm.option6.trim(),
-    option7: editForm.option7.trim(),
-    option8: editForm.option8.trim(),
+    option1: editOptionCount.value >= 1 ? editForm.option1.trim() : '',
+    option2: editOptionCount.value >= 2 ? editForm.option2.trim() : '',
+    option3: editOptionCount.value >= 3 ? editForm.option3.trim() : '',
+    option4: editOptionCount.value >= 4 ? editForm.option4.trim() : '',
+    option5: editOptionCount.value >= 5 ? editForm.option5.trim() : '',
+    option6: editOptionCount.value >= 6 ? editForm.option6.trim() : '',
+    option7: editOptionCount.value >= 7 ? editForm.option7.trim() : '',
+    option8: editOptionCount.value >= 8 ? editForm.option8.trim() : '',
     answerContent: answers,
     answerSource: optionalValue(editForm.answerSource),
+    questionImageBase64: optionalValue(editForm.questionImageBase64),
     questionYear: optionalValue(editForm.questionYear),
     questionSource: optionalValue(editForm.questionSource),
     correctRate: optionalValue(editForm.correctRate),
@@ -413,17 +426,24 @@ onMounted(async () => {
               <span>题干</span>
               <textarea v-model="editForm.questionContent" rows="6" required />
             </label>
-            <label class="full">
-              <span>题目图片 Base64</span>
-              <textarea v-model="editForm.questionImageBase64" rows="3" placeholder="没有图片可留空" />
-            </label>
-            <label v-for="option in optionFields" :key="option.key">
+            <label v-for="option in visibleOptionFields" :key="option.key">
               <span>选项 {{ option.label }}</span>
-              <textarea v-model="editForm[option.key]" rows="3" />
+              <textarea v-model="editForm[option.key as OptionKey]" rows="3" />
             </label>
+            <div class="option-editor-actions full">
+              <button class="ghost-button add-option-button" type="button" :disabled="editOptionCount >= optionFields.length" @click="addOption">
+                <Plus :size="16" />
+                添加选项
+              </button>
+              <span>{{ editOptionCount }} / {{ optionFields.length }}</span>
+            </div>
             <label class="full">
               <span>答案</span>
               <input v-model.trim="editForm.answerText" placeholder="单选填 A，多选填 A、C" />
+            </label>
+            <label class="full">
+              <span>题目图片 Base64</span>
+              <textarea v-model="editForm.questionImageBase64" rows="3" placeholder="没有图片可留空" />
             </label>
           </div>
 

@@ -44,7 +44,8 @@ body {
 
 button,
 input,
-select {
+select,
+textarea {
   font: inherit;
 }
 
@@ -63,7 +64,8 @@ a {
 }
 
 input,
-select {
+select,
+textarea {
   min-width: 0;
   width: 100%;
   border: 1px solid rgba(92, 116, 143, 0.18);
@@ -76,7 +78,8 @@ select {
 }
 
 input:focus,
-select:focus {
+select:focus,
+textarea:focus {
   border-color: rgba(69, 137, 255, 0.55);
   background: rgba(255, 255, 255, 0.86);
   box-shadow: 0 0 0 4px rgba(69, 137, 255, 0.12);
@@ -453,6 +456,13 @@ select:focus {
   padding: 22px;
 }
 
+.edit-dialog.glass-card {
+  border-color: rgba(212, 224, 236, 0.95);
+  background: #f8fbff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 .modal-head,
 .modal-actions {
   display: flex;
@@ -609,11 +619,31 @@ select:focus {
 .edit-grid textarea {
   min-height: 94px;
   resize: vertical;
+  line-height: 1.55;
+  background: #ffffff;
 }
 
 .edit-grid input:disabled {
   color: #6a7a8d;
   background: rgba(238, 244, 250, 0.72);
+}
+
+.option-editor-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid rgba(92, 116, 143, 0.14);
+  border-radius: 16px;
+  padding: 10px 12px;
+  color: #647488;
+  font-size: 13px;
+  font-weight: 800;
+  background: #ffffff;
+}
+
+.add-option-button {
+  min-height: 38px;
 }
 
 .detail-pane {
