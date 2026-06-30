@@ -54,6 +54,8 @@ export const api = {
   searchQuestions: (params: QuestionFilters) =>
     request<PageResult<Question>>(http.get('/api/question/search', { params })),
   questionTypes: () => request<string[]>(http.get('/api/question/typeList')),
+  questionYears: () => request<string[]>(http.get('/api/question/yearList')),
+  questionSources: () => request<string[]>(http.get('/api/question/sourceList')),
   questionDetail: (questionId: string) =>
     request<Question>(http.get('/api/question/detail', { params: { questionId } })),
   updateQuestion: (payload: QuestionUpdatePayload) =>

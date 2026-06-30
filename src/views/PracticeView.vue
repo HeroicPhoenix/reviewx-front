@@ -31,6 +31,8 @@ const analysisOpen = ref(false)
 const analysisSaving = ref(false)
 const analysisImageInput = ref<HTMLInputElement | null>(null)
 const questionTypes = ref<string[]>([])
+const questionYears = ref<string[]>([])
+const questionSources = ref<string[]>([])
 const error = ref('')
 const analysisMessage = ref('')
 
@@ -115,10 +117,6 @@ function nextQuestion(step: number) {
   if (next < 0 || next >= questions.value.length) return
   currentIndex.value = next
   resetAnswerState()
-}
-
-function handleFilterYearInput() {
-  filters.questionYear = filters.questionYear.replace(/\D/g, '').slice(0, 4)
 }
 
 function imageSrc(base64?: string) {
@@ -206,7 +204,25 @@ async function loadQuestionTypes() {
   }
 }
 
-onMounted(loadQuestionTypes)
+async function loadQuestionYears() {
+  try {
+    questionYears.value = await api.questionYears()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '年份加载失败'
+  }
+}
+
+async function loadQuestionSources() {
+  try {
+    questionSources.value = await api.questionSources()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '来源加载失败'
+  }
+}
+
+onMounted(async () => {
+  await Promise.all([loadQuestionTypes(), loadQuestionYears(), loadQuestionSources()])
+})
 </script>
 
 <template>
@@ -232,8 +248,14 @@ onMounted(loadQuestionTypes)
         <option value="">全部分类</option>
         <option v-for="type in questionTypes" :key="type" :value="type">{{ type }}</option>
       </select>
-      <input v-model.trim="filters.questionYear" inputmode="numeric" maxlength="4" placeholder="年份" @input="handleFilterYearInput" />
-      <input v-model.trim="filters.questionSource" placeholder="来源" />
+      <select v-model="filters.questionYear" aria-label="年份">
+        <option value="">全部年份</option>
+        <option v-for="year in questionYears" :key="year" :value="year">{{ year }}</option>
+      </select>
+      <select v-model="filters.questionSource" aria-label="来源">
+        <option value="">全部来源</option>
+        <option v-for="source in questionSources" :key="source" :value="source">{{ source }}</option>
+      </select>
       <input v-if="mode !== 'order'" v-model.number="filters.size" min="1" max="50" type="number" placeholder="数量" />
       <input v-if="mode === 'order'" v-model.number="filters.pageNum" min="1" type="number" placeholder="页码" />
     </div>
