@@ -711,6 +711,7 @@ textarea:focus {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
 }
 
@@ -835,6 +836,7 @@ textarea:focus {
 }
 
 .answer-panel,
+.analysis-panel,
 .result-box {
   display: grid;
   gap: 8px;
@@ -843,13 +845,24 @@ textarea:focus {
   background: rgba(255, 255, 255, 0.62);
 }
 
+.analysis-panel {
+  border: 1px solid rgba(92, 116, 143, 0.12);
+  background: rgba(248, 251, 255, 0.86);
+}
+
+.analysis-panel strong {
+  color: #294157;
+}
+
 .answer-panel p,
+.analysis-panel p,
 .info-card p {
   margin: 0;
   color: #627386;
 }
 
-.answer-panel p {
+.answer-panel p,
+.analysis-panel p {
   white-space: pre-line;
 }
 
@@ -932,6 +945,32 @@ textarea:focus {
   top: 112px;
   display: grid;
   gap: 16px;
+}
+
+.practice-analysis-editor {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid rgba(92, 116, 143, 0.12);
+  padding-top: 14px;
+}
+
+.practice-analysis-editor label {
+  display: grid;
+  gap: 7px;
+  color: #294157;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.practice-analysis-editor textarea {
+  min-height: 116px;
+  resize: vertical;
+  line-height: 1.55;
+  background: #ffffff;
+}
+
+.practice-analysis-editor .question-image-preview {
+  min-height: 140px;
 }
 
 .practice-side > strong {

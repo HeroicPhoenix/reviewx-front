@@ -43,6 +43,8 @@ export interface Question {
   option8?: string
   answerContent?: string[]
   answerSource?: string
+  analysisContent?: string
+  analysisImageBase64?: string
   questionYear?: string
   questionSource?: string
   correctRate?: string
@@ -63,6 +65,8 @@ export interface QuestionUpdatePayload {
   option8?: string
   answerContent: string[]
   answerSource?: string
+  analysisContent?: string
+  analysisImageBase64?: string
   questionYear?: string
   questionSource?: string
   correctRate?: string

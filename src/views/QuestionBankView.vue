@@ -22,6 +22,7 @@ const detailLoading = ref(false)
 const importing = ref(false)
 const zipInput = ref<HTMLInputElement | null>(null)
 const questionImageInput = ref<HTMLInputElement | null>(null)
+const analysisImageInput = ref<HTMLInputElement | null>(null)
 const importDialogOpen = ref(false)
 const importDragActive = ref(false)
 const importFile = ref<File | null>(null)
@@ -51,6 +52,8 @@ const editForm = reactive({
   option8: '',
   answerContent: [] as string[],
   answerSource: '',
+  analysisContent: '',
+  analysisImageBase64: '',
   questionYear: '',
   questionSource: '',
   correctRate: '',
@@ -72,6 +75,7 @@ type OptionKey = (typeof optionFields)[number]['key']
 const visibleOptionFields = computed(() => optionFields.slice(0, editOptionCount.value))
 
 const editQuestionImageSrc = computed(() => imageSrc(editForm.questionImageBase64))
+const editAnalysisImageSrc = computed(() => imageSrc(editForm.analysisImageBase64))
 
 const editCategoryOptions = computed(() => {
   const categories = [...questionTypes.value]
@@ -167,6 +171,8 @@ function fillEditForm(question: Question) {
   editForm.option8 = question.option8 ?? ''
   editForm.answerContent = [...(question.answerContent ?? [])]
   editForm.answerSource = question.answerSource ?? ''
+  editForm.analysisContent = question.analysisContent ?? ''
+  editForm.analysisImageBase64 = question.analysisImageBase64 ?? ''
   editForm.questionYear = question.questionYear ?? ''
   editForm.questionSource = question.questionSource ?? ''
   editForm.correctRate = normalizeQuestionCorrectRateInput(question.correctRate)
@@ -237,6 +243,10 @@ function openQuestionImagePicker() {
   questionImageInput.value?.click()
 }
 
+function openAnalysisImagePicker() {
+  analysisImageInput.value?.click()
+}
+
 async function handleQuestionImageSelected(event: Event) {
   const input = event.target as HTMLInputElement
   const file = input.files?.[0]
@@ -256,6 +266,25 @@ async function handleQuestionImageSelected(event: Event) {
   }
 }
 
+async function handleAnalysisImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    editError.value = '请选择图片文件'
+    return
+  }
+
+  try {
+    editForm.analysisImageBase64 = await readFileAsDataUrl(file)
+    editError.value = ''
+  } catch (e) {
+    editError.value = e instanceof Error ? e.message : '图片读取失败'
+  }
+}
+
 function readFileAsDataUrl(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader()
@@ -267,6 +296,10 @@ function readFileAsDataUrl(file: File) {
 
 function clearQuestionImage() {
   editForm.questionImageBase64 = ''
+}
+
+function clearAnalysisImage() {
+  editForm.analysisImageBase64 = ''
 }
 
 function optionalValue(value: string) {
@@ -306,6 +339,8 @@ async function saveEdit() {
     option8: editOptionCount.value >= 8 ? editForm.option8.trim() : '',
     answerContent: answers,
     answerSource: optionalValue(editForm.answerSource),
+    analysisContent: editForm.analysisContent.trim(),
+    analysisImageBase64: editForm.analysisImageBase64.trim(),
     questionImageBase64: editForm.questionImageBase64.trim(),
     questionYear: optionalValue(editForm.questionYear),
     questionSource: optionalValue(editForm.questionSource),
@@ -599,6 +634,38 @@ onMounted(async () => {
                 type="file"
                 accept="image/*"
                 @change="handleQuestionImageSelected"
+              />
+            </div>
+            <label class="full">
+              <span>解析文本</span>
+              <textarea v-model="editForm.analysisContent" rows="5" placeholder="填写这道题的解析" />
+            </label>
+            <div class="question-image-editor full">
+              <div class="question-image-editor-head">
+                <span>解析图片</span>
+                <div class="option-editor-buttons">
+                  <button class="ghost-button option-count-button" type="button" @click="openAnalysisImagePicker">
+                    <ImagePlus :size="16" />
+                    {{ editAnalysisImageSrc ? '替换图片' : '上传图片' }}
+                  </button>
+                  <button class="ghost-button option-count-button danger-button" type="button" :disabled="!editAnalysisImageSrc" @click="clearAnalysisImage">
+                    <Trash2 :size="16" />
+                    清除图片
+                  </button>
+                </div>
+              </div>
+
+              <div class="question-image-preview">
+                <img v-if="editAnalysisImageSrc" :src="editAnalysisImageSrc" alt="解析图片预览" />
+                <span v-else>暂无解析图片</span>
+              </div>
+
+              <input
+                ref="analysisImageInput"
+                class="file-input"
+                type="file"
+                accept="image/*"
+                @change="handleAnalysisImageSelected"
               />
             </div>
           </div>

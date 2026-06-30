@@ -58,6 +58,11 @@ export const api = {
     request<Question>(http.get('/api/question/detail', { params: { questionId } })),
   updateQuestion: (payload: QuestionUpdatePayload) =>
     request<Question>(http.post('/api/question/update', payload)),
+  updateQuestionAnalysis: (payload: {
+    questionId: string
+    analysisContent?: string
+    analysisImageBase64?: string
+  }) => request<Question>(http.post('/api/question/updateAnalysis', payload)),
   importFromDocsZip: (file: File, clearBeforeImport = false) => {
     const formData = new FormData()
     formData.append('file', file)

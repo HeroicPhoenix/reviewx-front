@@ -91,5 +91,16 @@ function imageSrc(base64?: string) {
       <span>正确答案：{{ question.answerContent.join('、') }}</span>
       <p v-if="question.answerSource">{{ question.answerSource }}</p>
     </div>
+
+    <div v-if="reveal && (question.analysisContent || question.analysisImageBase64)" class="analysis-panel">
+      <strong>解析</strong>
+      <p v-if="question.analysisContent">{{ question.analysisContent }}</p>
+      <img
+        v-if="question.analysisImageBase64"
+        class="question-image"
+        :src="imageSrc(question.analysisImageBase64)"
+        alt="解析图片"
+      />
+    </div>
   </article>
 </template>

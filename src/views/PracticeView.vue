@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { Check, RotateCcw, Send } from 'lucide-vue-next'
+import { Check, ImagePlus, Pencil, RotateCcw, Send, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
@@ -27,15 +27,27 @@ const startTime = ref(formatLocalDateTime())
 const result = ref<SubmitAnswerResult | null>(null)
 const loading = ref(false)
 const submitting = ref(false)
+const analysisOpen = ref(false)
+const analysisSaving = ref(false)
+const analysisImageInput = ref<HTMLInputElement | null>(null)
 const questionTypes = ref<string[]>([])
 const error = ref('')
+const analysisMessage = ref('')
+
+const analysisForm = reactive({
+  content: '',
+  imageBase64: '',
+})
 
 const current = computed(() => questions.value[currentIndex.value])
 const progress = computed(() => questions.value.length ? `${currentIndex.value + 1} / ${questions.value.length}` : '0 / 0')
+const analysisImageSrc = computed(() => imageSrc(analysisForm.imageBase64))
 
 function resetAnswerState() {
   selected.value = []
   result.value = null
+  analysisOpen.value = false
+  analysisMessage.value = ''
   startTime.value = formatLocalDateTime()
 }
 
@@ -71,22 +83,31 @@ function toggleOption(option: string) {
   }
 }
 
-async function submit() {
+async function submit(editAnalysis = false) {
   if (!current.value || !selected.value.length) return
   submitting.value = true
   error.value = ''
+  analysisMessage.value = ''
+  const endTime = formatLocalDateTime()
   try {
     result.value = await api.submitAnswer({
       questionId: current.value.questionId,
       selectedAnswer: selected.value,
       startTime: startTime.value,
-      endTime: formatLocalDateTime(),
+      endTime,
     })
+    if (editAnalysis) {
+      openAnalysisEditor()
+    }
   } catch (e) {
     error.value = e instanceof Error ? e.message : '提交失败'
   } finally {
     submitting.value = false
   }
+}
+
+async function submitAndEditAnalysis() {
+  await submit(true)
 }
 
 function nextQuestion(step: number) {
@@ -98,6 +119,83 @@ function nextQuestion(step: number) {
 
 function handleFilterYearInput() {
   filters.questionYear = filters.questionYear.replace(/\D/g, '').slice(0, 4)
+}
+
+function imageSrc(base64?: string) {
+  const value = base64?.trim()
+  if (!value) return ''
+  return value.startsWith('data:') ? value : `data:image/png;base64,${value}`
+}
+
+function fillAnalysisForm(question?: Question) {
+  analysisForm.content = question?.analysisContent ?? ''
+  analysisForm.imageBase64 = question?.analysisImageBase64 ?? ''
+}
+
+function openAnalysisEditor() {
+  fillAnalysisForm(current.value)
+  analysisOpen.value = true
+}
+
+function openAnalysisImagePicker() {
+  analysisImageInput.value?.click()
+}
+
+async function handleAnalysisImageSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+
+  if (!file) return
+  if (!file.type.startsWith('image/')) {
+    error.value = '请选择图片文件'
+    return
+  }
+
+  try {
+    analysisForm.imageBase64 = await readFileAsDataUrl(file)
+    error.value = ''
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '图片读取失败'
+  }
+}
+
+function readFileAsDataUrl(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result ?? ''))
+    reader.onerror = () => reject(new Error('图片读取失败'))
+    reader.readAsDataURL(file)
+  })
+}
+
+function clearAnalysisImage() {
+  analysisForm.imageBase64 = ''
+}
+
+async function saveAnalysis() {
+  if (!current.value) return
+  analysisSaving.value = true
+  error.value = ''
+  analysisMessage.value = ''
+  try {
+    const saved = await api.updateQuestionAnalysis({
+      questionId: current.value.questionId,
+      analysisContent: analysisForm.content.trim(),
+      analysisImageBase64: analysisForm.imageBase64.trim(),
+    })
+    questions.value[currentIndex.value] = {
+      ...current.value,
+      analysisContent: saved.analysisContent,
+      analysisImageBase64: saved.analysisImageBase64,
+    }
+    fillAnalysisForm(questions.value[currentIndex.value])
+    analysisMessage.value = '解析已保存'
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '解析保存失败'
+  } finally {
+    analysisSaving.value = false
+  }
 }
 
 async function loadQuestionTypes() {
@@ -153,7 +251,7 @@ onMounted(loadQuestionTypes)
     <div class="practice-layout">
       <div class="practice-main">
         <EmptyState v-if="!current" title="还没有题目" description="选择模式后点击取题。" />
-        <QuestionCard v-else :question="current" :selected="selected" :readonly="Boolean(result)" @select="toggleOption" />
+        <QuestionCard v-else :question="current" :selected="selected" :readonly="Boolean(result)" :reveal="Boolean(result)" @select="toggleOption" />
       </div>
 
       <aside class="practice-side glass-card">
@@ -165,10 +263,50 @@ onMounted(loadQuestionTypes)
           <small>正确答案：{{ result.correctAnswer.join('、') }}</small>
           <small>耗时：{{ formatMs(result.durationMs) }}</small>
         </div>
-        <button class="primary-button wide" type="button" :disabled="!selected.length || submitting || Boolean(result)" @click="submit">
+        <button class="primary-button wide" type="button" :disabled="!selected.length || submitting || Boolean(result)" @click="submit()">
           <Send :size="17" />
           {{ submitting ? '提交中...' : '提交答案' }}
         </button>
+        <button class="ghost-button wide" type="button" :disabled="!selected.length || submitting" @click="result ? openAnalysisEditor() : submitAndEditAnalysis()">
+          <Pencil :size="17" />
+          {{ result ? '编辑解析' : '提交答案并编辑解析' }}
+        </button>
+        <div v-if="analysisOpen" class="practice-analysis-editor">
+          <label>
+            <span>解析文本</span>
+            <textarea v-model="analysisForm.content" rows="5" placeholder="填写这道题的解析" />
+          </label>
+          <div class="question-image-editor">
+            <div class="question-image-editor-head">
+              <span>解析图片</span>
+              <div class="option-editor-buttons">
+                <button class="ghost-button option-count-button" type="button" @click="openAnalysisImagePicker">
+                  <ImagePlus :size="16" />
+                  {{ analysisImageSrc ? '替换图片' : '上传图片' }}
+                </button>
+                <button class="ghost-button option-count-button danger-button" type="button" :disabled="!analysisImageSrc" @click="clearAnalysisImage">
+                  <Trash2 :size="16" />
+                  清除图片
+                </button>
+              </div>
+            </div>
+            <div class="question-image-preview">
+              <img v-if="analysisImageSrc" :src="analysisImageSrc" alt="解析图片预览" />
+              <span v-else>暂无解析图片</span>
+            </div>
+            <input
+              ref="analysisImageInput"
+              class="file-input"
+              type="file"
+              accept="image/*"
+              @change="handleAnalysisImageSelected"
+            />
+          </div>
+          <button class="primary-button wide" type="button" :disabled="analysisSaving" @click="saveAnalysis">
+            {{ analysisSaving ? '保存中...' : '提交解析' }}
+          </button>
+          <p v-if="analysisMessage" class="notice">{{ analysisMessage }}</p>
+        </div>
         <div class="pager">
           <button class="ghost-button" type="button" :disabled="currentIndex <= 0" @click="nextQuestion(-1)">上一题</button>
           <button class="ghost-button" type="button" :disabled="currentIndex >= questions.length - 1" @click="nextQuestion(1)">下一题</button>
