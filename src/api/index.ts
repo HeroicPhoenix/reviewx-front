@@ -19,6 +19,7 @@ export interface QuestionFilters {
   questionType?: string
   questionYear?: string
   questionSource?: string
+  questionJoinDate?: string
   pageNum?: number
   pageSize?: number
   size?: number

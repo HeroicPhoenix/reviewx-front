@@ -12,6 +12,7 @@ const filters = reactive({
   questionType: '',
   questionYear: '',
   questionSource: '',
+  questionJoinDate: '',
   pageNum: 1,
   pageSize: 10,
 })
@@ -714,6 +715,7 @@ onMounted(async () => {
         <option value="">全部来源</option>
         <option v-for="source in questionSources" :key="source" :value="source">{{ source }}</option>
       </select>
+      <input v-model="filters.questionJoinDate" type="date" aria-label="题目加入日期" />
       <button class="primary-button" type="submit"><Search :size="17" />搜索</button>
     </form>
 

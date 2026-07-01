@@ -47,6 +47,7 @@ export interface Question {
   analysisImageBase64?: string
   questionYear?: string
   questionSource?: string
+  questionJoinDate?: string
   correctRate?: string
 }
 
