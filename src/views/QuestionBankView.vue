@@ -31,6 +31,7 @@ const clearBeforeImport = ref(false)
 const questionTypes = ref<string[]>([])
 const questionYears = ref<string[]>([])
 const questionSources = ref<string[]>([])
+const questionJoinDates = ref<string[]>([])
 const error = ref('')
 const importMessage = ref('')
 const jumpPage = ref(1)
@@ -469,8 +470,16 @@ async function loadQuestionSources() {
   }
 }
 
+async function loadQuestionJoinDates() {
+  try {
+    questionJoinDates.value = await api.questionJoinDates()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '加入日期加载失败'
+  }
+}
+
 async function loadFilterOptions() {
-  await Promise.all([loadQuestionTypes(), loadQuestionYears(), loadQuestionSources()])
+  await Promise.all([loadQuestionTypes(), loadQuestionYears(), loadQuestionSources(), loadQuestionJoinDates()])
 }
 
 onMounted(async () => {
@@ -715,7 +724,10 @@ onMounted(async () => {
         <option value="">全部来源</option>
         <option v-for="source in questionSources" :key="source" :value="source">{{ source }}</option>
       </select>
-      <input v-model="filters.questionJoinDate" type="date" aria-label="题目加入日期" />
+      <select v-model="filters.questionJoinDate" aria-label="题目加入日期">
+        <option value="">全部加入日期</option>
+        <option v-for="joinDate in questionJoinDates" :key="joinDate" :value="joinDate">{{ joinDate }}</option>
+      </select>
       <button class="primary-button" type="submit"><Search :size="17" />搜索</button>
     </form>
 

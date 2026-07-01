@@ -57,6 +57,7 @@ export const api = {
   questionTypes: () => request<string[]>(http.get('/api/question/typeList')),
   questionYears: () => request<string[]>(http.get('/api/question/yearList')),
   questionSources: () => request<string[]>(http.get('/api/question/sourceList')),
+  questionJoinDates: () => request<string[]>(http.get('/api/question/joinDateList')),
   questionDetail: (questionId: string) =>
     request<Question>(http.get('/api/question/detail', { params: { questionId } })),
   updateQuestion: (payload: QuestionUpdatePayload) =>
