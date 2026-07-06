@@ -8,8 +8,8 @@ const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 
-const username = ref('admin')
-const password = ref('123456')
+const username = ref('')
+const password = ref('')
 const loading = ref(false)
 const error = ref('')
 
@@ -34,19 +34,19 @@ async function submit() {
       <h1>ReviewX</h1>
       <p>题库检索、刷题训练与答题统计</p>
 
-      <form class="login-form" @submit.prevent="submit">
+      <form class="login-form" autocomplete="off" @submit.prevent="submit">
         <label>
           <span>用户名</span>
           <div class="input-with-icon">
             <UserRound :size="18" />
-            <input v-model.trim="username" autocomplete="username" placeholder="请输入用户名" />
+            <input v-model.trim="username" autocomplete="off" placeholder="请输入用户名" />
           </div>
         </label>
         <label>
           <span>密码</span>
           <div class="input-with-icon">
             <LockKeyhole :size="18" />
-            <input v-model="password" autocomplete="current-password" placeholder="请输入密码" type="password" />
+            <input v-model="password" autocomplete="new-password" placeholder="请输入密码" type="password" />
           </div>
         </label>
         <p v-if="error" class="form-error">{{ error }}</p>
