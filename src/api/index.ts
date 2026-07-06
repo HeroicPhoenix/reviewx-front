@@ -24,6 +24,7 @@ export interface QuestionFilters {
   pageSize?: number
   size?: number
   randomScope?: 'all' | 'done' | 'undone'
+  analysisScope?: 'all' | 'analyzed' | 'unanalyzed'
 }
 
 export interface RecordFilters {

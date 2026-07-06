@@ -1,67 +1,57 @@
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, ref } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Check, ImagePlus, Pencil, RotateCcw, Send, Trash2 } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
-import type { Question, SubmitAnswerResult } from '@/types/api'
+import { usePracticeStore } from '@/stores/practice'
+import type { Question } from '@/types/api'
 import { formatLocalDateTime, formatMs } from '@/utils/time'
 
-type Mode = 'random' | 'order' | 'wrong'
-type RandomScope = 'all' | 'done' | 'undone'
-
-const mode = ref<Mode>('random')
-const randomScope = ref<RandomScope>('all')
-const filters = reactive({
-  questionType: '',
-  questionYear: '',
-  questionSource: '',
-  size: 10,
-  pageNum: 1,
-  pageSize: 10,
-})
-const questions = ref<Question[]>([])
-const currentIndex = ref(0)
-const selected = ref<string[]>([])
-const startTime = ref(formatLocalDateTime())
-const result = ref<SubmitAnswerResult | null>(null)
+const practice = usePracticeStore()
+const {
+  mode,
+  randomScope,
+  analysisScope,
+  filters,
+  questions,
+  currentIndex,
+  selected,
+  startTime,
+  result,
+  analysisOpen,
+  analysisMessage,
+  analysisForm,
+} = storeToRefs(practice)
 const loading = ref(false)
 const submitting = ref(false)
-const analysisOpen = ref(false)
 const analysisSaving = ref(false)
 const analysisImageInput = ref<HTMLInputElement | null>(null)
 const questionTypes = ref<string[]>([])
 const questionYears = ref<string[]>([])
 const questionSources = ref<string[]>([])
 const error = ref('')
-const analysisMessage = ref('')
-
-const analysisForm = reactive({
-  content: '',
-  imageBase64: '',
-})
 
 const current = computed(() => questions.value[currentIndex.value])
 const progress = computed(() => questions.value.length ? `${currentIndex.value + 1} / ${questions.value.length}` : '0 / 0')
-const analysisImageSrc = computed(() => imageSrc(analysisForm.imageBase64))
-
-function resetAnswerState() {
-  selected.value = []
-  result.value = null
-  analysisOpen.value = false
-  analysisMessage.value = ''
-  startTime.value = formatLocalDateTime()
-}
+const analysisImageSrc = computed(() => imageSrc(analysisForm.value.imageBase64))
 
 async function loadQuestions() {
   loading.value = true
   error.value = ''
-  resetAnswerState()
+  practice.resetAnswerState()
   try {
-    if (mode.value === 'random') questions.value = await api.randomList({ ...filters, randomScope: randomScope.value })
-    if (mode.value === 'wrong') questions.value = await api.wrongList(filters)
+    if (mode.value === 'random') {
+      questions.value = await api.randomList({
+        ...filters.value,
+        randomScope: randomScope.value,
+        analysisScope: analysisScope.value,
+      })
+    }
+    if (mode.value === 'wrong') questions.value = await api.wrongList(filters.value)
     if (mode.value === 'order') {
-      const page = await api.orderList(filters)
+      const page = await api.orderList(filters.value)
       questions.value = page.list
     }
     currentIndex.value = 0
@@ -116,7 +106,7 @@ function nextQuestion(step: number) {
   const next = currentIndex.value + step
   if (next < 0 || next >= questions.value.length) return
   currentIndex.value = next
-  resetAnswerState()
+  practice.resetAnswerState()
 }
 
 function imageSrc(base64?: string) {
@@ -126,8 +116,7 @@ function imageSrc(base64?: string) {
 }
 
 function fillAnalysisForm(question?: Question) {
-  analysisForm.content = question?.analysisContent ?? ''
-  analysisForm.imageBase64 = question?.analysisImageBase64 ?? ''
+  practice.fillAnalysisForm(question)
 }
 
 function openAnalysisEditor() {
@@ -151,7 +140,7 @@ async function handleAnalysisImageSelected(event: Event) {
   }
 
   try {
-    analysisForm.imageBase64 = await readFileAsDataUrl(file)
+    analysisForm.value.imageBase64 = await readFileAsDataUrl(file)
     error.value = ''
   } catch (e) {
     error.value = e instanceof Error ? e.message : '图片读取失败'
@@ -168,7 +157,7 @@ function readFileAsDataUrl(file: File) {
 }
 
 function clearAnalysisImage() {
-  analysisForm.imageBase64 = ''
+  analysisForm.value.imageBase64 = ''
 }
 
 async function saveAnalysis() {
@@ -179,8 +168,8 @@ async function saveAnalysis() {
   try {
     const saved = await api.updateQuestionAnalysis({
       questionId: current.value.questionId,
-      analysisContent: analysisForm.content.trim(),
-      analysisImageBase64: analysisForm.imageBase64.trim(),
+      analysisContent: analysisForm.value.content.trim(),
+      analysisImageBase64: analysisForm.value.imageBase64.trim(),
     })
     questions.value[currentIndex.value] = {
       ...current.value,
@@ -261,10 +250,15 @@ onMounted(async () => {
     </div>
 
     <div v-if="mode === 'random'" class="random-scope-panel glass-card">
-      <div class="segmented random-scope">
-        <button type="button" :class="{ active: randomScope === 'all' }" @click="randomScope = 'all'">全部</button>
+      <div class="segmented random-scope" aria-label="作答范围">
+        <button type="button" :class="{ active: randomScope === 'all' }" @click="randomScope = 'all'">作答全部</button>
         <button type="button" :class="{ active: randomScope === 'done' }" @click="randomScope = 'done'">已做</button>
         <button type="button" :class="{ active: randomScope === 'undone' }" @click="randomScope = 'undone'">未做</button>
+      </div>
+      <div class="segmented random-scope" aria-label="解析范围">
+        <button type="button" :class="{ active: analysisScope === 'all' }" @click="analysisScope = 'all'">解析全部</button>
+        <button type="button" :class="{ active: analysisScope === 'analyzed' }" @click="analysisScope = 'analyzed'">已解析</button>
+        <button type="button" :class="{ active: analysisScope === 'unanalyzed' }" @click="analysisScope = 'unanalyzed'">未解析</button>
       </div>
     </div>
 

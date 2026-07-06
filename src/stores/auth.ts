@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { api } from '@/api'
+import { usePracticeStore } from '@/stores/practice'
 import type { Me } from '@/types/api'
 
 interface AuthState {
@@ -41,6 +42,7 @@ export const useAuthStore = defineStore('auth', {
       this.token = ''
       this.user = null
       this.ready = false
+      usePracticeStore().clearSession()
       localStorage.removeItem('reviewx_token')
     },
   },
