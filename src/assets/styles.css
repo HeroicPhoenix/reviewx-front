@@ -727,6 +727,18 @@ textarea:focus {
   background: #f8fbff;
 }
 
+.image-drop-target {
+  outline: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+}
+
+.image-drop-target:focus,
+.image-drop-target:focus-within {
+  border-color: rgba(69, 137, 255, 0.55);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(69, 137, 255, 0.12);
+}
+
 .question-image-preview img {
   display: block;
   max-width: 100%;

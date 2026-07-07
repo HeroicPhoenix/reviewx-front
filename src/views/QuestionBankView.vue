@@ -75,6 +75,7 @@ const optionFields = [
 ] as const
 
 type OptionKey = (typeof optionFields)[number]['key']
+type EditImageTarget = 'question' | 'analysis'
 
 const visibleOptionFields = computed(() => optionFields.slice(0, editOptionCount.value))
 
@@ -252,18 +253,7 @@ async function handleQuestionImageSelected(event: Event) {
   const file = input.files?.[0]
   input.value = ''
 
-  if (!file) return
-  if (!file.type.startsWith('image/')) {
-    editError.value = '请选择图片文件'
-    return
-  }
-
-  try {
-    editForm.questionImageBase64 = await readFileAsDataUrl(file)
-    editError.value = ''
-  } catch (e) {
-    editError.value = e instanceof Error ? e.message : '图片读取失败'
-  }
+  await setEditImageFromFile('question', file)
 }
 
 async function handleAnalysisImageSelected(event: Event) {
@@ -271,6 +261,10 @@ async function handleAnalysisImageSelected(event: Event) {
   const file = input.files?.[0]
   input.value = ''
 
+  await setEditImageFromFile('analysis', file)
+}
+
+async function setEditImageFromFile(target: EditImageTarget, file?: File) {
   if (!file) return
   if (!file.type.startsWith('image/')) {
     editError.value = '请选择图片文件'
@@ -278,11 +272,38 @@ async function handleAnalysisImageSelected(event: Event) {
   }
 
   try {
-    editForm.analysisImageBase64 = await readFileAsDataUrl(file)
+    const image = await readFileAsDataUrl(file)
+    if (target === 'question') {
+      editForm.questionImageBase64 = image
+    } else {
+      editForm.analysisImageBase64 = image
+    }
     editError.value = ''
   } catch (e) {
     editError.value = e instanceof Error ? e.message : '图片读取失败'
   }
+}
+
+async function handleEditImagePaste(event: ClipboardEvent, target: EditImageTarget) {
+  const file = imageFileFromItems(event.clipboardData?.items)
+  if (!file) return
+  event.preventDefault()
+  await setEditImageFromFile(target, file)
+}
+
+async function handleEditImageDrop(event: DragEvent, target: EditImageTarget) {
+  const file = event.dataTransfer?.files?.[0]
+  await setEditImageFromFile(target, file)
+}
+
+function imageFileFromItems(items?: DataTransferItemList) {
+  if (!items) return undefined
+  for (const item of Array.from(items)) {
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      return item.getAsFile() ?? undefined
+    }
+  }
+  return undefined
 }
 
 function readFileAsDataUrl(file: File) {
@@ -651,7 +672,13 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div class="question-image-preview">
+              <div
+                class="question-image-preview image-drop-target"
+                tabindex="0"
+                @paste="handleEditImagePaste($event, 'question')"
+                @dragover.prevent
+                @drop.prevent="handleEditImageDrop($event, 'question')"
+              >
                 <img v-if="editQuestionImageSrc" :src="editQuestionImageSrc" alt="题目图片预览" />
                 <span v-else>暂无题目图片</span>
               </div>
@@ -683,7 +710,13 @@ onMounted(async () => {
                 </div>
               </div>
 
-              <div class="question-image-preview">
+              <div
+                class="question-image-preview image-drop-target"
+                tabindex="0"
+                @paste="handleEditImagePaste($event, 'analysis')"
+                @dragover.prevent
+                @drop.prevent="handleEditImageDrop($event, 'analysis')"
+              >
                 <img v-if="editAnalysisImageSrc" :src="editAnalysisImageSrc" alt="解析图片预览" />
                 <span v-else>暂无解析图片</span>
               </div>

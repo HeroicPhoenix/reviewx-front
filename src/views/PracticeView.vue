@@ -31,6 +31,7 @@ const analysisImageInput = ref<HTMLInputElement | null>(null)
 const questionTypes = ref<string[]>([])
 const questionYears = ref<string[]>([])
 const questionSources = ref<string[]>([])
+const questionJoinDates = ref<string[]>([])
 const error = ref('')
 
 const current = computed(() => questions.value[currentIndex.value])
@@ -40,7 +41,7 @@ const analysisImageSrc = computed(() => imageSrc(analysisForm.value.imageBase64)
 async function loadQuestions() {
   loading.value = true
   error.value = ''
-  practice.resetAnswerState()
+  practice.resetPracticeRun()
   try {
     if (mode.value === 'random') {
       questions.value = await api.randomList({
@@ -54,7 +55,7 @@ async function loadQuestions() {
       const page = await api.orderList(filters.value)
       questions.value = page.list
     }
-    currentIndex.value = 0
+    practice.setCurrentQuestion(0, questions.value[0])
   } catch (e) {
     error.value = e instanceof Error ? e.message : '取题失败'
   } finally {
@@ -66,6 +67,7 @@ function toggleOption(option: string) {
   if (result.value) return
   if (current.value?.questionType === 1) {
     selected.value = selected.value.includes(option) ? [] : [option]
+    practice.saveAnswerState(current.value)
     return
   }
   if (selected.value.includes(option)) {
@@ -73,6 +75,7 @@ function toggleOption(option: string) {
   } else {
     selected.value = [...selected.value, option].sort()
   }
+  practice.saveAnswerState(current.value)
 }
 
 async function submit(editAnalysis = false) {
@@ -88,6 +91,7 @@ async function submit(editAnalysis = false) {
       startTime: startTime.value,
       endTime,
     })
+    practice.saveAnswerState(current.value)
     if (editAnalysis) {
       openAnalysisEditor()
     }
@@ -105,8 +109,8 @@ async function submitAndEditAnalysis() {
 function nextQuestion(step: number) {
   const next = currentIndex.value + step
   if (next < 0 || next >= questions.value.length) return
-  currentIndex.value = next
-  practice.resetAnswerState()
+  practice.saveAnswerState(current.value)
+  practice.setCurrentQuestion(next, questions.value[next])
 }
 
 function imageSrc(base64?: string) {
@@ -133,18 +137,43 @@ async function handleAnalysisImageSelected(event: Event) {
   const file = input.files?.[0]
   input.value = ''
 
+  await setAnalysisImageFromFile(file)
+}
+
+async function setAnalysisImageFromFile(file?: File) {
   if (!file) return
   if (!file.type.startsWith('image/')) {
     error.value = '请选择图片文件'
     return
   }
-
   try {
     analysisForm.value.imageBase64 = await readFileAsDataUrl(file)
     error.value = ''
   } catch (e) {
     error.value = e instanceof Error ? e.message : '图片读取失败'
   }
+}
+
+async function handleAnalysisImagePaste(event: ClipboardEvent) {
+  const file = imageFileFromItems(event.clipboardData?.items)
+  if (!file) return
+  event.preventDefault()
+  await setAnalysisImageFromFile(file)
+}
+
+async function handleAnalysisImageDrop(event: DragEvent) {
+  const file = event.dataTransfer?.files?.[0]
+  await setAnalysisImageFromFile(file)
+}
+
+function imageFileFromItems(items?: DataTransferItemList) {
+  if (!items) return undefined
+  for (const item of Array.from(items)) {
+    if (item.kind === 'file' && item.type.startsWith('image/')) {
+      return item.getAsFile() ?? undefined
+    }
+  }
+  return undefined
 }
 
 function readFileAsDataUrl(file: File) {
@@ -209,8 +238,16 @@ async function loadQuestionSources() {
   }
 }
 
+async function loadQuestionJoinDates() {
+  try {
+    questionJoinDates.value = await api.questionJoinDates()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '加入日期加载失败'
+  }
+}
+
 onMounted(async () => {
-  await Promise.all([loadQuestionTypes(), loadQuestionYears(), loadQuestionSources()])
+  await Promise.all([loadQuestionTypes(), loadQuestionYears(), loadQuestionSources(), loadQuestionJoinDates()])
 })
 </script>
 
@@ -244,6 +281,10 @@ onMounted(async () => {
       <select v-model="filters.questionSource" aria-label="来源">
         <option value="">全部来源</option>
         <option v-for="source in questionSources" :key="source" :value="source">{{ source }}</option>
+      </select>
+      <select v-model="filters.questionJoinDate" aria-label="题目加入日期">
+        <option value="">全部加入日期</option>
+        <option v-for="joinDate in questionJoinDates" :key="joinDate" :value="joinDate">{{ joinDate }}</option>
       </select>
       <input v-if="mode !== 'order'" v-model.number="filters.size" min="1" max="50" type="number" placeholder="数量" />
       <input v-if="mode === 'order'" v-model.number="filters.pageNum" min="1" type="number" placeholder="页码" />
@@ -306,7 +347,13 @@ onMounted(async () => {
                 </button>
               </div>
             </div>
-            <div class="question-image-preview">
+            <div
+              class="question-image-preview image-drop-target"
+              tabindex="0"
+              @paste="handleAnalysisImagePaste"
+              @dragover.prevent
+              @drop.prevent="handleAnalysisImageDrop"
+            >
               <img v-if="analysisImageSrc" :src="analysisImageSrc" alt="解析图片预览" />
               <span v-else>暂无解析图片</span>
             </div>
