@@ -122,13 +122,13 @@ onMounted(load)
         <option :value="1">正确</option>
         <option :value="0">错误</option>
       </select>
-      <label class="compact-field">
-        <span>作答开始时间</span>
-        <input v-model="filters.startTime" type="datetime-local" />
-      </label>
-      <label class="compact-field">
-        <span>作答结束时间</span>
-        <input v-model="filters.endTime" type="datetime-local" />
+      <label class="compact-field date-range-field">
+        <span>作答时间范围</span>
+        <div class="date-range-inputs">
+          <input v-model="filters.startTime" aria-label="作答开始时间" type="datetime-local" />
+          <span>至</span>
+          <input v-model="filters.endTime" aria-label="作答结束时间" type="datetime-local" />
+        </div>
       </label>
       <button class="primary-button" type="submit"><Search :size="17" />筛选</button>
     </form>

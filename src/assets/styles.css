@@ -426,6 +426,24 @@ textarea:focus {
   font-weight: 800;
 }
 
+.date-range-field {
+  grid-column: span 2;
+}
+
+.date-range-inputs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+}
+
+.date-range-inputs > span {
+  color: #617489;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 .practice-controls {
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
