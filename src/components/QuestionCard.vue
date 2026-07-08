@@ -40,6 +40,12 @@ function imageSrc(base64?: string) {
   if (!base64) return ''
   return base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`
 }
+
+function selectOption(option: string) {
+  const selectedText = window.getSelection()?.toString()
+  if (selectedText?.trim()) return
+  emit('select', option)
+}
 </script>
 
 <template>
@@ -80,7 +86,7 @@ function imageSrc(base64?: string) {
         }"
         type="button"
         :disabled="readonly"
-        @click="emit('select', option.label)"
+        @click="selectOption(option.label)"
       >
         <strong>{{ option.label }}</strong>
         <span>{{ option.text }}</span>

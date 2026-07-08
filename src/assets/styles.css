@@ -415,6 +415,17 @@ textarea:focus {
   grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
 }
 
+.compact-field {
+  display: grid;
+  gap: 6px;
+}
+
+.compact-field span {
+  color: #617489;
+  font-size: 12px;
+  font-weight: 800;
+}
+
 .practice-controls {
   grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
 }
@@ -824,6 +835,7 @@ textarea:focus {
 .option-button span {
   line-height: 1.55;
   white-space: pre-line;
+  user-select: text;
 }
 
 .option-button strong {
@@ -834,6 +846,7 @@ textarea:focus {
   border-radius: 10px;
   color: #3778ff;
   background: rgba(55, 120, 255, 0.1);
+  user-select: text;
 }
 
 .option-button:hover,

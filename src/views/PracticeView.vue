@@ -67,7 +67,6 @@ function toggleOption(option: string) {
   if (result.value) return
   if (current.value?.questionType === 1) {
     selected.value = selected.value.includes(option) ? [] : [option]
-    practice.saveAnswerState(current.value)
     return
   }
   if (selected.value.includes(option)) {
@@ -75,7 +74,6 @@ function toggleOption(option: string) {
   } else {
     selected.value = [...selected.value, option].sort()
   }
-  practice.saveAnswerState(current.value)
 }
 
 async function submit(editAnalysis = false) {
@@ -109,7 +107,11 @@ async function submitAndEditAnalysis() {
 function nextQuestion(step: number) {
   const next = currentIndex.value + step
   if (next < 0 || next >= questions.value.length) return
-  practice.saveAnswerState(current.value)
+  if (result.value) {
+    practice.saveAnswerState(current.value)
+  } else {
+    practice.clearAnswerState(current.value)
+  }
   practice.setCurrentQuestion(next, questions.value[next])
 }
 

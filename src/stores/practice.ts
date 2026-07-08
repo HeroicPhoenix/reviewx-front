@@ -86,12 +86,16 @@ export const usePracticeStore = defineStore('practice', {
       this.resetAnswerState()
     },
     saveAnswerState(question?: Question) {
-      if (!question?.questionId) return
+      if (!question?.questionId || !this.result) return
       this.answerStates[question.questionId] = {
         selected: [...this.selected],
         startTime: this.startTime,
-        result: this.result ? { ...this.result, selectedAnswer: [...this.result.selectedAnswer], correctAnswer: [...this.result.correctAnswer] } : null,
+        result: { ...this.result, selectedAnswer: [...this.result.selectedAnswer], correctAnswer: [...this.result.correctAnswer] },
       }
+    },
+    clearAnswerState(question?: Question) {
+      if (!question?.questionId) return
+      delete this.answerStates[question.questionId]
     },
     loadAnswerState(question?: Question) {
       this.analysisOpen = false
@@ -107,7 +111,7 @@ export const usePracticeStore = defineStore('practice', {
       const state = this.answerStates[question.questionId]
       this.selected = state ? [...state.selected] : []
       this.result = state?.result ? { ...state.result, selectedAnswer: [...state.result.selectedAnswer], correctAnswer: [...state.result.correctAnswer] } : null
-      this.startTime = state?.startTime ?? formatLocalDateTime()
+      this.startTime = state?.result ? state.startTime : formatLocalDateTime()
     },
     setCurrentQuestion(index: number, question?: Question) {
       this.currentIndex = index

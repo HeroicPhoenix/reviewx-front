@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { Search } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
@@ -22,6 +22,12 @@ const detailLoading = ref(false)
 const detailOpen = ref(false)
 const detail = ref<Question | null>(null)
 const error = ref('')
+const jumpPage = ref(1)
+
+const totalPages = computed(() => {
+  if (!page.value) return 1
+  return Math.max(1, Math.ceil(page.value.total / page.value.pageSize))
+})
 
 function dateParam(value: string) {
   return value ? `${value}:00`.replace('T', ' ') : undefined
@@ -41,6 +47,7 @@ async function load() {
     ])
     page.value = records
     stat.value = statResult
+    jumpPage.value = records.pageNum
   } catch (e) {
     error.value = e instanceof Error ? e.message : '记录加载失败'
   } finally {
@@ -51,6 +58,22 @@ async function load() {
 async function search() {
   filters.pageNum = 1
   await load()
+}
+
+async function changePageSize() {
+  filters.pageNum = 1
+  await load()
+}
+
+async function goPage(pageNum: number) {
+  const next = Math.min(totalPages.value, Math.max(1, pageNum))
+  filters.pageNum = next
+  jumpPage.value = next
+  await load()
+}
+
+async function jumpToPage() {
+  await goPage(Number(jumpPage.value) || 1)
 }
 
 async function openQuestionDetail(questionId: string) {
@@ -99,8 +122,14 @@ onMounted(load)
         <option :value="1">正确</option>
         <option :value="0">错误</option>
       </select>
-      <input v-model="filters.startTime" type="datetime-local" />
-      <input v-model="filters.endTime" type="datetime-local" />
+      <label class="compact-field">
+        <span>作答开始时间</span>
+        <input v-model="filters.startTime" type="datetime-local" />
+      </label>
+      <label class="compact-field">
+        <span>作答结束时间</span>
+        <input v-model="filters.endTime" type="datetime-local" />
+      </label>
       <button class="primary-button" type="submit"><Search :size="17" />筛选</button>
     </form>
 
@@ -117,7 +146,8 @@ onMounted(load)
               <th>正确答案</th>
               <th>结果</th>
               <th>耗时</th>
-              <th>提交时间</th>
+              <th>作答开始时间</th>
+              <th>作答结束时间</th>
             </tr>
           </thead>
           <tbody>
@@ -131,6 +161,7 @@ onMounted(load)
               <td>{{ record.correctAnswer?.join('、') }}</td>
               <td><span class="status-pill" :class="{ ok: record.isCorrect }">{{ record.isCorrect ? '正确' : '错误' }}</span></td>
               <td>{{ formatMs(record.durationMs) }}</td>
+              <td>{{ record.startTime || '-' }}</td>
               <td>{{ record.endTime || '-' }}</td>
             </tr>
           </tbody>
@@ -138,10 +169,25 @@ onMounted(load)
       </div>
     </div>
 
-    <div v-if="page" class="pager">
-      <button class="ghost-button" type="button" :disabled="filters.pageNum <= 1" @click="filters.pageNum--; load()">上一页</button>
-      <span>{{ page.pageNum }} / {{ Math.max(1, Math.ceil(page.total / page.pageSize)) }}</span>
-      <button class="ghost-button" type="button" :disabled="page.pageNum >= Math.ceil(page.total / page.pageSize)" @click="filters.pageNum++; load()">下一页</button>
+    <div v-if="page" class="pager question-pager">
+      <span class="pager-total">共 {{ page.total }} 条</span>
+      <label class="pager-control">
+        <span>每页</span>
+        <select v-model.number="filters.pageSize" @change="changePageSize">
+          <option :value="10">10</option>
+          <option :value="20">20</option>
+          <option :value="50">50</option>
+          <option :value="100">100</option>
+        </select>
+      </label>
+      <button class="ghost-button" type="button" :disabled="filters.pageNum <= 1" @click="goPage(filters.pageNum - 1)">上一页</button>
+      <span>{{ page.pageNum }} / {{ totalPages }}</span>
+      <button class="ghost-button" type="button" :disabled="page.pageNum >= totalPages" @click="goPage(filters.pageNum + 1)">下一页</button>
+      <form class="pager-control" @submit.prevent="jumpToPage">
+        <span>跳至</span>
+        <input v-model.number="jumpPage" min="1" :max="totalPages" type="number" />
+        <button class="ghost-button" type="submit">跳转</button>
+      </form>
     </div>
 
     <div v-if="detailOpen" class="modal-backdrop" @click.self="closeQuestionDetail">
