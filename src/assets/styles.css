@@ -357,6 +357,14 @@ textarea:focus {
   gap: 16px;
 }
 
+.page-heading-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
 .metric-grid,
 .quick-grid {
   display: grid;
@@ -537,6 +545,53 @@ textarea:focus {
 
 .zip-drop-zone span {
   color: #68788b;
+  font-size: 13px;
+}
+
+.json-drop-zone {
+  min-height: 150px;
+}
+
+.transfer-scope-grid {
+  display: grid;
+  gap: 10px;
+}
+
+.transfer-scope-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  border: 1px solid rgba(92, 116, 143, 0.14);
+  border-radius: 17px;
+  padding: 13px 14px;
+  color: #294157;
+  background: rgba(255, 255, 255, 0.54);
+  cursor: pointer;
+  transition: border-color 0.16s ease, background 0.16s ease;
+}
+
+.transfer-scope-option.active {
+  border-color: rgba(55, 120, 255, 0.56);
+  background: rgba(238, 246, 255, 0.88);
+}
+
+.transfer-scope-option input {
+  margin-top: 3px;
+  accent-color: #3778ff;
+}
+
+.transfer-scope-option span {
+  display: grid;
+  gap: 3px;
+}
+
+.transfer-scope-option small,
+.transfer-hint {
+  color: #68788b;
+}
+
+.transfer-hint {
+  margin: 0;
   font-size: 13px;
 }
 
@@ -1240,6 +1295,10 @@ th {
   .page-heading {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .page-heading-actions {
+    justify-content: flex-start;
   }
 
   .page-heading h1 {

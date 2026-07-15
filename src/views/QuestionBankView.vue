@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { DownloadCloud, ImagePlus, Minus, Pencil, Plus, Search, Trash2 } from 'lucide-vue-next'
+import { Download, DownloadCloud, ImagePlus, Minus, Pencil, Plus, Search, Trash2, Upload } from 'lucide-vue-next'
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
-import type { PageResult, Question, QuestionUpdatePayload } from '@/types/api'
+import type { PageResult, Question, QuestionTransferScope, QuestionUpdatePayload } from '@/types/api'
 import { normalizeQuestionCorrectRateInput } from '@/utils/time'
 
 const filters = reactive({
@@ -40,6 +40,22 @@ const editLoading = ref(false)
 const editSaving = ref(false)
 const editError = ref('')
 const editOptionCount = ref(4)
+const transferDialog = ref<'export' | 'import' | null>(null)
+const transferScope = ref<QuestionTransferScope>('question_analysis')
+const transferBusy = ref(false)
+const jsonInput = ref<HTMLInputElement | null>(null)
+const jsonFile = ref<File | null>(null)
+const jsonDragActive = ref(false)
+
+const transferScopeOptions: Array<{
+  value: QuestionTransferScope
+  label: string
+  description: string
+}> = [
+  { value: 'question', label: '仅题目', description: '包含题目 ID、题干、选项、答案和题目属性' },
+  { value: 'analysis', label: '仅解析', description: '包含题目 ID、解析文本和解析图片' },
+  { value: 'question_analysis', label: '题目和解析', description: '包含题目 ID 及题目、解析的全部内容' },
+]
 
 const editForm = reactive({
   questionId: '',
@@ -467,6 +483,98 @@ async function importZip(file: File) {
   }
 }
 
+function openTransferDialog(mode: 'export' | 'import') {
+  if (transferBusy.value) return
+  transferDialog.value = mode
+  transferScope.value = 'question_analysis'
+  jsonFile.value = null
+  jsonDragActive.value = false
+  importMessage.value = ''
+  error.value = ''
+}
+
+function closeTransferDialog() {
+  if (transferBusy.value) return
+  transferDialog.value = null
+  jsonDragActive.value = false
+}
+
+function openJsonPicker() {
+  if (!transferBusy.value) jsonInput.value?.click()
+}
+
+function handleJsonSelected(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = ''
+  if (file) selectJsonFile(file)
+}
+
+function selectJsonFile(file: File) {
+  if (!file.name.toLowerCase().endsWith('.json')) {
+    jsonFile.value = null
+    error.value = '请选择 JSON 文件'
+    return
+  }
+  error.value = ''
+  jsonFile.value = file
+}
+
+function handleJsonDrop(event: DragEvent) {
+  jsonDragActive.value = false
+  if (transferBusy.value) return
+  const file = event.dataTransfer?.files?.[0]
+  if (file) selectJsonFile(file)
+}
+
+async function exportJson() {
+  if (transferBusy.value) return
+  transferBusy.value = true
+  error.value = ''
+  try {
+    const data = await api.exportQuestionsJson(transferScope.value)
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `reviewx-${transferScope.value}-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+    transferDialog.value = null
+    importMessage.value = `已导出 ${data.items.length} 道题的${transferScopeOptions.find((item) => item.value === data.scope)?.label ?? '题库数据'}`
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '导出失败'
+  } finally {
+    transferBusy.value = false
+  }
+}
+
+async function importJson() {
+  if (!jsonFile.value || transferBusy.value) {
+    if (!jsonFile.value) error.value = '请先选择 JSON 文件'
+    return
+  }
+  transferBusy.value = true
+  error.value = ''
+  try {
+    const result = await api.importQuestionsJson(jsonFile.value, transferScope.value)
+    transferDialog.value = null
+    jsonFile.value = null
+    importMessage.value = `JSON 导入完成：成功 ${result.successCount}/${result.totalCount} 项，失败 ${result.failureCount} 项`
+    if (result.failures.length) {
+      error.value = result.failures.slice(0, 3).join('；')
+    }
+    await loadFilterOptions()
+    await load()
+  } catch (e) {
+    error.value = e instanceof Error ? e.message : '导入失败'
+  } finally {
+    transferBusy.value = false
+  }
+}
+
 async function loadQuestionTypes() {
   try {
     questionTypes.value = await api.questionTypes()
@@ -513,12 +621,22 @@ onMounted(async () => {
     <div class="page-heading">
       <div>
         <p>题库</p>
-        <h1>搜索、查看答案和导入题目</h1>
+        <h1>搜索、查看和迁移题库内容</h1>
       </div>
-      <button class="ghost-button" type="button" :disabled="importing" @click="openImportDialog">
-        <DownloadCloud :size="17" />
-        {{ importing ? '导入中...' : '上传 zip 导入' }}
-      </button>
+      <div class="page-heading-actions">
+        <button class="ghost-button" type="button" :disabled="transferBusy" @click="openTransferDialog('export')">
+          <Download :size="17" />
+          导出 JSON
+        </button>
+        <button class="ghost-button" type="button" :disabled="transferBusy" @click="openTransferDialog('import')">
+          <Upload :size="17" />
+          导入 JSON
+        </button>
+        <button class="ghost-button" type="button" :disabled="importing" @click="openImportDialog">
+          <DownloadCloud :size="17" />
+          {{ importing ? '导入中...' : '上传 zip 导入' }}
+        </button>
+      </div>
     </div>
 
     <div v-if="importDialogOpen" class="modal-backdrop" @click.self="closeImportDialog">
@@ -569,7 +687,67 @@ onMounted(async () => {
       </div>
     </div>
 
-    <div v-if="editDialogOpen" class="modal-backdrop" @click.self="closeEditDialog">
+    <div v-if="transferDialog" class="modal-backdrop" @click.self="closeTransferDialog">
+      <div class="import-dialog glass-card">
+        <div class="modal-head">
+          <div>
+            <p>{{ transferDialog === 'export' ? '导出题库' : '导入题库' }}</p>
+            <h2>{{ transferDialog === 'export' ? '选择导出内容' : '选择导入内容' }}</h2>
+          </div>
+          <button class="icon-button" type="button" :disabled="transferBusy" @click="closeTransferDialog">×</button>
+        </div>
+
+        <div class="transfer-scope-grid">
+          <label
+            v-for="option in transferScopeOptions"
+            :key="option.value"
+            class="transfer-scope-option"
+            :class="{ active: transferScope === option.value }"
+          >
+            <input v-model="transferScope" type="radio" :value="option.value" :disabled="transferBusy" />
+            <span>
+              <strong>{{ option.label }}</strong>
+              <small>{{ option.description }}</small>
+            </span>
+          </label>
+        </div>
+
+        <template v-if="transferDialog === 'import'">
+          <button
+            class="zip-drop-zone json-drop-zone"
+            :class="{ active: jsonDragActive }"
+            type="button"
+            :disabled="transferBusy"
+            @click="openJsonPicker"
+            @dragover.prevent="jsonDragActive = true"
+            @dragenter.prevent="jsonDragActive = true"
+            @dragleave.prevent="jsonDragActive = false"
+            @drop.prevent="handleJsonDrop"
+          >
+            <Upload :size="30" />
+            <strong>{{ jsonFile?.name || '点击选择 JSON 文件，或拖拽到这里' }}</strong>
+            <span>{{ jsonFile ? `${(jsonFile.size / 1024).toFixed(1)} KB` : '仅支持 .json 文件' }}</span>
+          </button>
+          <input ref="jsonInput" class="file-input" type="file" accept=".json,application/json" @change="handleJsonSelected" />
+        </template>
+
+        <p class="transfer-hint">所有模式都会携带题目 ID；导入时将按题目 ID 匹配当前用户的题库。</p>
+
+        <div class="modal-actions">
+          <button class="ghost-button" type="button" :disabled="transferBusy" @click="closeTransferDialog">取消</button>
+          <button
+            class="primary-button"
+            type="button"
+            :disabled="transferBusy || (transferDialog === 'import' && !jsonFile)"
+            @click="transferDialog === 'export' ? exportJson() : importJson()"
+          >
+            {{ transferBusy ? '处理中...' : transferDialog === 'export' ? '导出 JSON' : '导入 JSON' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="editDialogOpen" class="modal-backdrop">
       <form class="edit-dialog glass-card" @submit.prevent="saveEdit">
         <div class="modal-head">
           <div>

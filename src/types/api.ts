@@ -136,3 +136,19 @@ export interface QuestionImportResult {
   failures?: unknown[]
   missingIdQuestions?: unknown[]
 }
+
+export type QuestionTransferScope = 'question' | 'analysis' | 'question_analysis'
+
+export interface QuestionJsonExport {
+  schemaVersion: number
+  scope: QuestionTransferScope
+  exportedAt: string
+  items: Array<Record<string, unknown> & { questionId: string }>
+}
+
+export interface QuestionJsonImportResult {
+  totalCount: number
+  successCount: number
+  failureCount: number
+  failures: string[]
+}

@@ -9,6 +9,9 @@ import type {
   PageResult,
   Question,
   QuestionImportResult,
+  QuestionJsonExport,
+  QuestionJsonImportResult,
+  QuestionTransferScope,
   QuestionUpdatePayload,
   SubmitAnswerResult,
   UserAccount,
@@ -74,6 +77,16 @@ export const api = {
     formData.append('clearBeforeImport', String(clearBeforeImport))
     return request<QuestionImportResult>(
       http.post('/api/question/importFromDocsZip', formData, { timeout: 120000 }),
+    )
+  },
+  exportQuestionsJson: (scope: QuestionTransferScope) =>
+    request<QuestionJsonExport>(http.get('/api/question/exportJson', { params: { scope }, timeout: 120000 })),
+  importQuestionsJson: (file: File, scope: QuestionTransferScope) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('scope', scope)
+    return request<QuestionJsonImportResult>(
+      http.post('/api/question/importJson', formData, { timeout: 120000 }),
     )
   },
   randomList: (params: QuestionFilters) =>
