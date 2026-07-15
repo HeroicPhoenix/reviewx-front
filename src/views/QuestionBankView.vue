@@ -4,7 +4,7 @@ import { Download, DownloadCloud, ImagePlus, Minus, Pencil, Plus, Search, Trash2
 import { api } from '@/api'
 import EmptyState from '@/components/EmptyState.vue'
 import QuestionCard from '@/components/QuestionCard.vue'
-import type { PageResult, Question, QuestionTransferScope, QuestionUpdatePayload } from '@/types/api'
+import type { PageResult, Question, QuestionTransferScope, QuestionTransferTask, QuestionUpdatePayload } from '@/types/api'
 import { normalizeQuestionCorrectRateInput } from '@/utils/time'
 
 const filters = reactive({
@@ -46,6 +46,10 @@ const transferBusy = ref(false)
 const jsonInput = ref<HTMLInputElement | null>(null)
 const jsonFile = ref<File | null>(null)
 const jsonDragActive = ref(false)
+const transferProgress = ref(0)
+const transferStage = ref('')
+const transferProcessed = ref(0)
+const transferTotal = ref(0)
 
 const transferScopeOptions: Array<{
   value: QuestionTransferScope
@@ -489,6 +493,10 @@ function openTransferDialog(mode: 'export' | 'import') {
   transferScope.value = 'question_analysis'
   jsonFile.value = null
   jsonDragActive.value = false
+  transferProgress.value = 0
+  transferStage.value = ''
+  transferProcessed.value = 0
+  transferTotal.value = 0
   importMessage.value = ''
   error.value = ''
 }
@@ -531,19 +539,28 @@ async function exportJson() {
   if (transferBusy.value) return
   transferBusy.value = true
   error.value = ''
+  transferProgress.value = 0
+  transferStage.value = '正在创建导出任务'
   try {
-    const data = await api.exportQuestionsJson(transferScope.value)
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json;charset=utf-8' })
+    const created = await api.startQuestionExportTask(transferScope.value)
+    transferStage.value = '正在生成 JSON 文件'
+    const task = await waitForTransferTask(created.taskId, 0, 90)
+    transferStage.value = '正在下载 JSON 文件'
+    transferProgress.value = 90
+    const blob = await api.downloadQuestionsJson(task.taskId, (progress) => {
+      transferProgress.value = 90 + Math.round(progress * 0.1)
+    })
     const url = URL.createObjectURL(blob)
     const link = document.createElement('a')
     link.href = url
-    link.download = `reviewx-${transferScope.value}-${new Date().toISOString().slice(0, 10)}.json`
+    link.download = task.fileName || `reviewx-${transferScope.value}-${new Date().toISOString().slice(0, 10)}.json`
     document.body.appendChild(link)
     link.click()
     link.remove()
     URL.revokeObjectURL(url)
+    transferProgress.value = 100
     transferDialog.value = null
-    importMessage.value = `已导出 ${data.items.length} 道题的${transferScopeOptions.find((item) => item.value === data.scope)?.label ?? '题库数据'}`
+    importMessage.value = `已导出 ${task.totalCount} 道题的${transferScopeOptions.find((item) => item.value === transferScope.value)?.label ?? '题库数据'}`
   } catch (e) {
     error.value = e instanceof Error ? e.message : '导出失败'
   } finally {
@@ -558,8 +575,16 @@ async function importJson() {
   }
   transferBusy.value = true
   error.value = ''
+  transferProgress.value = 0
+  transferStage.value = '正在上传 JSON 文件'
   try {
-    const result = await api.importQuestionsJson(jsonFile.value, transferScope.value)
+    const created = await api.startQuestionImportTask(jsonFile.value, transferScope.value, (progress) => {
+      transferProgress.value = Math.round(progress * 0.2)
+    })
+    transferStage.value = '正在导入题库数据'
+    const task = await waitForTransferTask(created.taskId, 20, 100)
+    const result = task.importResult
+    if (!result) throw new Error('导入任务未返回处理结果')
     transferDialog.value = null
     jsonFile.value = null
     importMessage.value = `JSON 导入完成：成功 ${result.successCount}/${result.totalCount} 项，失败 ${result.failureCount} 项`
@@ -573,6 +598,25 @@ async function importJson() {
   } finally {
     transferBusy.value = false
   }
+}
+
+async function waitForTransferTask(taskId: string, progressStart: number, progressEnd: number) {
+  const deadline = Date.now() + 30 * 60 * 1000
+  while (Date.now() < deadline) {
+    const task = await api.questionTransferTask(taskId)
+    updateTransferProgress(task, progressStart, progressEnd)
+    if (task.status === 'completed') return task
+    if (task.status === 'failed') throw new Error(task.message || '任务处理失败')
+    await new Promise((resolve) => window.setTimeout(resolve, 400))
+  }
+  throw new Error('任务处理超时，请稍后重试')
+}
+
+function updateTransferProgress(task: QuestionTransferTask, progressStart: number, progressEnd: number) {
+  transferProcessed.value = task.processedCount
+  transferTotal.value = task.totalCount
+  const range = progressEnd - progressStart
+  transferProgress.value = Math.min(progressEnd, progressStart + Math.round(task.progress * range / 100))
 }
 
 async function loadQuestionTypes() {
@@ -731,7 +775,26 @@ onMounted(async () => {
           <input ref="jsonInput" class="file-input" type="file" accept=".json,application/json" @change="handleJsonSelected" />
         </template>
 
+        <div v-if="transferBusy" class="transfer-progress-panel" aria-live="polite">
+          <div class="transfer-progress-head">
+            <span>{{ transferStage }}</span>
+            <strong>{{ transferProgress }}%</strong>
+          </div>
+          <div
+            class="transfer-progress-track"
+            role="progressbar"
+            aria-label="题库数据处理进度"
+            aria-valuemin="0"
+            aria-valuemax="100"
+            :aria-valuenow="transferProgress"
+          >
+            <span :style="{ width: `${transferProgress}%` }" />
+          </div>
+          <small v-if="transferTotal">已处理 {{ transferProcessed }} / {{ transferTotal }} 道题</small>
+        </div>
+
         <p class="transfer-hint">所有模式都会携带题目 ID；导入时将按题目 ID 匹配当前用户的题库。</p>
+        <p v-if="error" class="notice error">{{ error }}</p>
 
         <div class="modal-actions">
           <button class="ghost-button" type="button" :disabled="transferBusy" @click="closeTransferDialog">取消</button>

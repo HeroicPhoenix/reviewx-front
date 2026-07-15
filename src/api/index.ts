@@ -12,6 +12,7 @@ import type {
   QuestionJsonExport,
   QuestionJsonImportResult,
   QuestionTransferScope,
+  QuestionTransferTask,
   QuestionUpdatePayload,
   SubmitAnswerResult,
   UserAccount,
@@ -88,6 +89,38 @@ export const api = {
     return request<QuestionJsonImportResult>(
       http.post('/api/question/importJson', formData, { timeout: 120000 }),
     )
+  },
+  startQuestionExportTask: (scope: QuestionTransferScope) =>
+    request<QuestionTransferTask>(http.post('/api/question/exportJsonTask', undefined, { params: { scope } })),
+  startQuestionImportTask: (
+    file: File,
+    scope: QuestionTransferScope,
+    onUploadProgress?: (progress: number) => void,
+  ) => {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('scope', scope)
+    return request<QuestionTransferTask>(
+      http.post('/api/question/importJsonTask', formData, {
+        timeout: 120000,
+        onUploadProgress: (event) => {
+          if (event.total) onUploadProgress?.(Math.round((event.loaded * 100) / event.total))
+        },
+      }),
+    )
+  },
+  questionTransferTask: (taskId: string) =>
+    request<QuestionTransferTask>(http.get('/api/question/jsonTransferTask', { params: { taskId } })),
+  downloadQuestionsJson: async (taskId: string, onDownloadProgress?: (progress: number) => void) => {
+    const response = await http.get<Blob>('/api/question/downloadJson', {
+      params: { taskId },
+      responseType: 'blob',
+      timeout: 120000,
+      onDownloadProgress: (event) => {
+        if (event.total) onDownloadProgress?.(Math.round((event.loaded * 100) / event.total))
+      },
+    })
+    return response.data
   },
   randomList: (params: QuestionFilters) =>
     request<Question[]>(http.get('/api/practice/randomList', { params })),

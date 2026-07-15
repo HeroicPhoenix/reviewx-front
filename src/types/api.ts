@@ -152,3 +152,17 @@ export interface QuestionJsonImportResult {
   failureCount: number
   failures: string[]
 }
+
+export type QuestionTransferTaskStatus = 'queued' | 'processing' | 'completed' | 'failed'
+
+export interface QuestionTransferTask {
+  taskId: string
+  taskType: 'import' | 'export'
+  status: QuestionTransferTaskStatus
+  progress: number
+  processedCount: number
+  totalCount: number
+  message?: string
+  fileName?: string
+  importResult?: QuestionJsonImportResult
+}

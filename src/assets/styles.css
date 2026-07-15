@@ -595,6 +595,48 @@ textarea:focus {
   font-size: 13px;
 }
 
+.transfer-progress-panel {
+  display: grid;
+  gap: 9px;
+  border-radius: 17px;
+  padding: 14px;
+  color: #294157;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.transfer-progress-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.transfer-progress-head strong {
+  color: #3778ff;
+}
+
+.transfer-progress-track {
+  height: 10px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(82, 110, 141, 0.12);
+}
+
+.transfer-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #3778ff, #3ac0a0);
+  box-shadow: 0 0 14px rgba(55, 120, 255, 0.28);
+  transition: width 0.24s ease;
+}
+
+.transfer-progress-panel small {
+  color: #68788b;
+}
+
 .check-row {
   display: flex;
   align-items: center;
