@@ -558,31 +558,66 @@ textarea:focus {
 }
 
 .transfer-scope-option {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 13px;
+  min-height: 76px;
   border: 1px solid rgba(92, 116, 143, 0.14);
-  border-radius: 17px;
-  padding: 13px 14px;
+  border-radius: 18px;
+  padding: 14px 16px;
   color: #294157;
   background: rgba(255, 255, 255, 0.54);
   cursor: pointer;
-  transition: border-color 0.16s ease, background 0.16s ease;
+  transition: transform 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, background 0.16s ease;
+}
+
+.transfer-scope-option:hover {
+  transform: translateY(-1px);
+  border-color: rgba(55, 120, 255, 0.34);
+  background: rgba(255, 255, 255, 0.76);
 }
 
 .transfer-scope-option.active {
-  border-color: rgba(55, 120, 255, 0.56);
-  background: rgba(238, 246, 255, 0.88);
+  border-color: rgba(55, 120, 255, 0.68);
+  background: linear-gradient(135deg, rgba(238, 246, 255, 0.96), rgba(239, 252, 248, 0.9));
+  box-shadow: 0 10px 24px rgba(55, 120, 255, 0.1);
 }
 
 .transfer-scope-option input {
-  margin-top: 3px;
+  display: block;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
   accent-color: #3778ff;
+  cursor: pointer;
+}
+
+.transfer-scope-option input:focus {
+  border: 0;
+  background: transparent;
+  box-shadow: 0 0 0 4px rgba(55, 120, 255, 0.12);
 }
 
 .transfer-scope-option span {
   display: grid;
-  gap: 3px;
+  gap: 4px;
+  min-width: 0;
+}
+
+.transfer-scope-option strong {
+  color: #213d58;
+  font-size: 16px;
+}
+
+.transfer-scope-option small {
+  line-height: 1.45;
 }
 
 .transfer-scope-option small,
